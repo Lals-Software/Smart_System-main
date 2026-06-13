@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard | Smart Attendance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Specific Styles for Staff Dashboard */
+        .profile-header-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background: var(--student-icon-bg);
+            color: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+        }
+        .profile-details h2 { margin-bottom: 5px; color: var(--text-color); }
+        .profile-details p { color: #666; margin-bottom: 5px; font-size: 0.95rem; }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+        .info-box label { font-size: 0.8rem; color: #888; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-box span { font-weight: 600; color: #333; font-size: 1rem; }
+
+        .timetable-day { margin-bottom: 20px; }
+        .timetable-day h4 { margin-bottom: 10px; color: var(--primary-color); border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .period-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .period-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #eee;
+            text-align: center;
+        }
+        .period-num { font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+        .period-subject { font-weight: 600; color: #333; font-size: 0.9rem; margin-bottom: 3px; }
+        .period-class { font-size: 0.8rem; color: var(--primary-color); background: #e3f2fd; padding: 2px 6px; border-radius: 4px; display: inline-block; }
+
+        .action-buttons { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px; }
+        
+        .attendance-stats-card {
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .attendance-stats-card h3 { font-size: 2.5rem; margin: 10px 0; }
+        .attendance-stats-card p { opacity: 0.9; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 10px; width: 100%; max-width: 500px; position: relative; animation: fadeIn 0.3s; }
+        .close-modal { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 1.2rem; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-chalkboard-teacher"></i> Staff Portal</h2>
+                <button class="close-sidebar" id="closeSidebar"><i class="fas fa-times"></i></button>
+            </div>
+            <ul class="menu-items">
+                <li><a href="#" onclick="switchTab('dashboard')" class="active" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="#" onclick="switchTab('profile')" id="nav-profile"><i class="fas fa-user"></i> Profile</a></li>
+                <li><a href="#" onclick="switchTab('timetable')" id="nav-timetable"><i class="fas fa-calendar-alt"></i> Timetable</a></li>
+                <li><a href="#" onclick="switchTab('attendance')" id="nav-attendance"><i class="fas fa-user-check"></i> Attendance</a></li>
+                <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <div class="user-info">
+                    <span id="headerStaffName" style="font-weight: 600; margin-right: 10px;">Staff Name</span> 
+                    <span class="badge badge-info" id="headerStaffId">ID: ---</span>
+                </div>
+                <div class="academic-year">
+                    <i class="fas fa-calendar-check"></i> <span id="academicYearDisplay">2025 – 2026</span>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                
+                <!-- 1. Dashboard Overview -->
+                <div id="dashboard-section" class="section active">
+                    <h3 class="section-title">Dashboard Overview</h3>
+                    
+                    <!-- Profile Summary Card -->
+                    <div class="profile-header-card">
+                        <div class="profile-avatar"><i class="fas fa-user-tie"></i></div>
+                        <div class="profile-details">
+                            <h2 id="dashName">Loading...</h2>
+                            <p><i class="fas fa-briefcase"></i> <span id="dashRole">Professor</span> &bull; <span id="dashDept">Computer Science</span></p>
+                            <p><i class="fas fa-envelope"></i> <span id="dashEmail">email@college.edu</span></p>
+                        </div>
+                    </div>
+
+                    <div class="cards-grid">
+                        <!-- Student Summary -->
+                        <div class="card">
+                            <div class="card-icon student-bg"><i class="fas fa-users"></i></div>
+                            <div class="card-info">
+                                <h3 id="totalStudentsAssigned">0</h3>
+                                <p>Total Students Assigned</p>
+                            </div>
+                        </div>
+                        <!-- Workload Summary -->
+                        <div class="card">
+                            <div class="card-icon staff-bg"><i class="fas fa-clock"></i></div>
+                            <div class="card-info">
+                                <h3 id="weeklyHours">0</h3>
+                                <p>Weekly Teaching Hours</p>
+                            </div>
+                        </div>
+                        <!-- Classes Count -->
+                        <div class="card">
+                            <div class="card-icon" style="background: #e8f5e9; color: #2e7d32;"><i class="fas fa-chalkboard"></i></div>
+                            <div class="card-info">
+                                <h3 id="totalClassesCount">0</h3>
+                                <p>Classes Handled</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <h3 class="section-title">Quick Actions</h3>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="switchTab('attendance')"><i class="fas fa-user-check"></i> Mark Attendance</button>
+                        <button class="btn btn-outline" onclick="switchTab('timetable')"><i class="fas fa-calendar-alt"></i> View Timetable</button>
+                        <button class="btn btn-outline" onclick="switchTab('profile')"><i class="fas fa-user-edit"></i> Update Profile</button>
+                    </div>
+                </div>
+
+                <!-- 2. Profile Section -->
+                <div id="profile-section" class="section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 class="section-title" style="margin-bottom: 0;">My Profile</h3>
+                        <button class="btn btn-primary" onclick="openEditProfileModal()"><i class="fas fa-edit"></i> Edit Profile</button>
+                    </div>
+                    <div class="card">
+                        <div class="info-grid">
+                            <div class="info-box"><label>Full Name</label><span id="profName">-</span></div>
+                            <div class="info-box"><label>Staff ID</label><span id="profId">-</span></div>
+                            <div class="info-box"><label>Email ID</label><span id="profEmail">-</span></div>
+                            <div class="info-box"><label>Department</label><span>Computer Science (CSE)</span></div>
+                            <div class="info-box"><label>Role</label><span>Assistant Professor</span></div>
+                            <div class="info-box"><label>Staff Type</label><span class="badge badge-success">Permanent</span></div>
+                            <div class="info-box"><label>Joining Date</label><span>12 Aug 2020</span></div>
+                            <div class="info-box"><label>Phone</label><span>+91 98765 43210</span></div>
+                        </div>
+                    </div>
+
+                    <h3 class="section-title" style="margin-top: 30px;">Teaching Information</h3>
+                    <div class="card">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Batch / Class</th>
+                                    <th>Semester</th>
+                                    <th>Type</th>
+                                    <th>Enrolled</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teachingInfoBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. Timetable Section -->
+                <div id="timetable-section" class="section">
+                    <h3 class="section-title">My Weekly Timetable</h3>
+                    <div id="timetableContainer">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- 4. Attendance Management -->
+                <div id="attendance-section" class="section">
+                    <h3 class="section-title">Mark Attendance</h3>
+                    <div class="card">
+                        <div class="form-group grid-2">
+                            <div>
+                                <label style="display:block; margin-bottom:5px;">Select Class & Subject</label>
+                                <select id="attClassSelect" class="form-control" onchange="loadAttendanceStudents()">
+                                    <option value="">-- Select Class --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block; margin-bottom:5px;">Date & Period</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="date" id="attDate" class="form-control" value="">
+                                    <select id="attPeriod" class="form-control" style="width: 120px;">
+                                        <option value="1">Period 1</option>
+                                        <option value="2">Period 2</option>
+                                        <option value="3">Period 3</option>
+                                        <option value="4">Period 4</option>
+                                        <option value="5">Period 5</option>
+                                        <option value="6">Period 6</option>
+                                        <option value="7">Period 7</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="attendanceStudentList" style="display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h4>Student List</h4>
+                                <div>
+                                    <span class="badge badge-info">Total: <span id="attTotalCount">0</span></span>
+                                </div>
+                            </div>
+                            <table style="margin-bottom: 20px;">
+                                <thead>
+                                    <tr>
+                                        <th>Reg No</th>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attTableBody"></tbody>
+                            </table>
+                            <button class="btn btn-primary" onclick="saveAttendance()"><i class="fas fa-save"></i> Submit Attendance</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <i class="fas fa-times close-modal" onclick="closeModal('editProfileModal')"></i>
+            <h2 style="margin-bottom: 20px;">Edit Profile</h2>
+            <form onsubmit="handleProfileUpdate(event)">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="editEmail" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="editPhone" class="form-control" placeholder="+91...">
+                </div>
+                <div class="form-group">
+                    <label>New Password <small>(Leave blank to keep current)</small></label>
+                    <input type="password" id="editPassword" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- Data Handling ---
+        // Mock Login: Get user from localStorage or create dummy
+        let currentUser = JSON.parse(localStorage.getItem('smartAttendance_currentUser'));
+        let allUsers = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
+        const allClasses = JSON.parse(localStorage.getItem('smartAttendance_classes')) || [];
+        const allTimetables = JSON.parse(localStorage.getItem('smartAttendance_timetable')) || {};
+        
+        // If no logged in user, simulate one for demonstration
+        if (!currentUser || currentUser.role !== 'staff') {
+            const staff = allUsers.find(u => u.role === 'staff');
+            if (staff) {
+                currentUser = staff;
+            } else {
+                currentUser = {
+                    id: 101,
+                    name: "Dr. Alan Turing",
+                    role: "staff",
+                    email: "alan@college.edu",
+                    teachingAssignments: [
+                        { subject: "Artificial Intelligence", classId: "2024-2028", semester: 4 },
+                        { subject: "Data Structures", classId: "2025-2029", semester: 2 }
+                    ]
+                };
+            }
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initUI();
+            loadDashboardData();
+            loadProfile();
+            loadTimetable();
+            setupAttendance();
+            
+            // Set today's date
+            document.getElementById('attDate').valueAsDate = new Date();
+        });
+
+        function initUI() {
+            // Sidebar Toggle
+            const sidebar = document.getElementById('sidebar');
+            document.getElementById('menuToggle').addEventListener('click', () => sidebar.classList.add('active'));
+            document.getElementById('closeSidebar').addEventListener('click', () => sidebar.classList.remove('active'));
+
+            // Header Info
+            document.getElementById('headerStaffName').textContent = currentUser.name;
+            document.getElementById('headerStaffId').textContent = `ID: ${currentUser.id}`;
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.menu-items a').forEach(l => l.classList.remove('active'));
+            
+            document.getElementById(`${tabName}-section`).classList.add('active');
+            const navItem = document.getElementById(`nav-${tabName}`);
+            if(navItem) navItem.classList.add('active');
+            if(tabName === 'dashboard') loadDashboardData();
+            
+            // Close sidebar on mobile after click
+            if(window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
+        }
+
+        // --- Dashboard & Profile Logic ---
+        function loadDashboardData() {
+            // Refresh data to ensure latest enrollments are counted
+            allUsers = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
+
+            document.getElementById('dashName').textContent = currentUser.name;
+            document.getElementById('dashEmail').textContent = currentUser.email;
+            
+            // Calculate Stats
+            const assignments = currentUser.teachingAssignments || [];
+            document.getElementById('totalClassesCount').textContent = assignments.length;
+
+            // Count total students in assigned classes
+            const uniqueStudentIds = new Set();
+            assignments.forEach(assign => {
+                const studentsInClass = allUsers.filter(u => 
+                    u.role === 'student' && 
+                    u.classId === assign.classId && 
+                    u.enrolledCourses && 
+                    u.enrolledCourses.includes(assign.subject)
+                );
+                studentsInClass.forEach(s => uniqueStudentIds.add(s.id));
+            });
+            document.getElementById('totalStudentsAssigned').textContent = uniqueStudentIds.size;
+
+            // Calculate Workload (Count occurrences in timetable)
+            let weeklyHours = 0;
+            const mySubjects = assignments.map(a => a.subject);
+            
+            Object.values(allTimetables).forEach(classTt => {
+                Object.values(classTt).forEach(dayPeriods => {
+                    Object.values(dayPeriods).forEach(subject => {
+                        if(mySubjects.includes(subject)) weeklyHours++;
+                    });
+                });
+            });
+            document.getElementById('weeklyHours').textContent = weeklyHours || assignments.length * 3; // Fallback estimate
+        }
+
+        function loadProfile() {
+            allUsers = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
+
+            document.getElementById('profName').textContent = currentUser.name;
+            document.getElementById('profId').textContent = currentUser.id;
+            document.getElementById('profEmail').textContent = currentUser.email;
+            // Phone is not in base object in this context, but handled in edit logic
+
+            const tbody = document.getElementById('teachingInfoBody');
+            tbody.innerHTML = '';
+            const assignments = currentUser.teachingAssignments || [];
+            
+            if(assignments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5">No subjects assigned yet.</td></tr>';
+            } else {
+                assignments.forEach(assign => {
+                    const cls = allClasses.find(c => c.id === assign.classId);
+                    const className = cls ? cls.name : assign.classId;
+                    
+                    // Calculate enrolled count for this specific subject
+                    const enrolledCount = allUsers.filter(u => 
+                        u.role === 'student' && 
+                        u.classId === assign.classId && 
+                        u.enrolledCourses && 
+                        u.enrolledCourses.includes(assign.subject)
+                    ).length;
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${assign.subject}</strong></td>
+                            <td>${className}</td>
+                            <td>Sem ${assign.semester || '-'}</td>
+                            <td><span class="badge badge-info">Theory</span></td>
+                            <td><span class="badge badge-success">${enrolledCount} Students</span></td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        // --- Timetable Logic ---
+        function loadTimetable() {
+            const container = document.getElementById('timetableContainer');
+            container.innerHTML = '';
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            const mySubjects = (currentUser.teachingAssignments || []).map(a => a.subject);
+
+            days.forEach(day => {
+                let dayHtml = `<div class="timetable-day"><h4>${day}</h4><div class="period-list">`;
+                let hasClass = false;
+
+                // Scan all class timetables for my subjects
+                allClasses.forEach(cls => {
+                    const classTt = allTimetables[cls.id];
+                    if(classTt && classTt[day]) {
+                        for(let period=1; period<=7; period++) {
+                            const subject = classTt[day][period];
+                            if(subject && mySubjects.includes(subject)) {
+                                hasClass = true;
+                                dayHtml += `
+                                    <div class="period-item">
+                                        <div class="period-num">Period ${period}</div>
+                                        <div class="period-subject">${subject}</div>
+                                        <div class="period-class">${cls.name}</div>
+                                    </div>
+                                `;
+                            }
+                        }
+                    }
+                });
+
+                dayHtml += `</div></div>`;
+                if(hasClass) container.innerHTML += dayHtml;
+            });
+
+            if(container.innerHTML === '') {
+                container.innerHTML = '<p style="color:#777;">No classes scheduled for this week.</p>';
+            }
+        }
+
+        // --- Attendance Logic ---
+        function setupAttendance() {
+            const select = document.getElementById('attClassSelect');
+            const assignments = currentUser.teachingAssignments || [];
+            assignments.forEach(assign => {
+                const cls = allClasses.find(c => c.id === assign.classId);
+                const name = cls ? cls.name : assign.classId;
+                const option = document.createElement('option');
+                option.value = `${assign.classId}|${assign.subject}`;
+                option.textContent = `${name} - ${assign.subject}`;
+                select.appendChild(option);
+            });
+        }
+
+        function loadAttendanceStudents() {
+            const classId = document.getElementById('attClassSelect').value;
+            const listDiv = document.getElementById('attendanceStudentList');
+            const tbody = document.getElementById('attTableBody');
+            tbody.innerHTML = '';
+
+            if(!classId) {
+                listDiv.style.display = 'none';
+                return;
+            }
+
+            // Refresh users data to get latest enrollments
+            allUsers = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
+
+            const [cId, subject] = classId.split('|');
+
+            const students = allUsers.filter(u => u.role === 'student' && u.classId === cId && u.enrolledCourses && u.enrolledCourses.includes(subject));
+            document.getElementById('attTotalCount').textContent = students.length;
+
+            if(students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3">No enrolled students found for this subject.</td></tr>';
+            } else {
+                students.forEach(s => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${s.regNo}</td>
+                            <td>${s.name}</td>
+                            <td>
+                                <label style="margin-right:10px;"><input type="radio" name="att_${s.id}" value="present" checked> Present</label>
+                                <label><input type="radio" name="att_${s.id}" value="absent"> Absent</label>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            listDiv.style.display = 'block';
+        }
+
+        function saveAttendance() {
+            const selectValue = document.getElementById('attClassSelect').value;
+            const date = document.getElementById('attDate').value;
+            const period = document.getElementById('attPeriod').value;
+            
+            if(!selectValue || !date) {
+                alert('Please select class and date.');
+                return;
+            }
+
+            const [classId, subject] = selectValue.split('|');
+
+            // Get existing attendance or init
+            const attendanceData = JSON.parse(localStorage.getItem('smartAttendance_attendance')) || {};
+            if(!attendanceData[date]) attendanceData[date] = {};
+            if(!attendanceData[date][classId]) attendanceData[date][classId] = {};
+            if(!attendanceData[date][classId][period]) attendanceData[date][classId][period] = {};
+
+            // Collect data
+            const students = allUsers.filter(u => u.role === 'student' && u.classId === classId && u.enrolledCourses && u.enrolledCourses.includes(subject));
+            let presentCount = 0;
+            
+            students.forEach(s => {
+                const radios = document.getElementsByName(`att_${s.id}`);
+                let status = 'present';
+                for(const r of radios) {
+                    if(r.checked) status = r.value;
+                }
+                attendanceData[date][classId][period][s.id] = status;
+                if(status === 'present') presentCount++;
+            });
+
+            localStorage.setItem('smartAttendance_attendance', JSON.stringify(attendanceData));
+            alert(`Attendance Saved!\nPresent: ${presentCount}\nAbsent: ${students.length - presentCount}`);
+        }
+
+        // --- Profile Edit Logic ---
+        function openEditProfileModal() {
+            document.getElementById('editEmail').value = currentUser.email || '';
+            document.getElementById('editPhone').value = currentUser.phone || '';
+            document.getElementById('editPassword').value = '';
+            document.getElementById('editProfileModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = "none";
+            }
+        }
+
+        function handleProfileUpdate(e) {
+            e.preventDefault();
+            const email = document.getElementById('editEmail').value;
+            const phone = document.getElementById('editPhone').value;
+            const password = document.getElementById('editPassword').value;
+
+            const userIndex = allUsers.findIndex(u => u.id === currentUser.id);
+            if (userIndex !== -1) {
+                allUsers[userIndex].email = email;
+                allUsers[userIndex].phone = phone;
+                if (password) allUsers[userIndex].password = password;
+                
+                localStorage.setItem('smartAttendance_users', JSON.stringify(allUsers));
+                currentUser = allUsers[userIndex]; // Update local session
+                localStorage.setItem('smartAttendance_currentUser', JSON.stringify(currentUser));
+                
+                loadProfile();
+                loadDashboardData();
+                closeModal('editProfileModal');
+                alert('Profile updated successfully!');
+            }
+        }
+
+        function logout() {
+            // Clear current user session if needed, or just redirect
+            window.location.href = 'login.html'; // Redirecting to main landing for now
+        }
+    </script>
+</body>
+</html>
