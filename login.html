@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Smart Attendance System</title>
+    <!-- Using FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --primary-hover: #357abd;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --visual-bg: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --text-color: #333;
+            --input-bg: #f5f7fa;
+            --error-color: #e74c3c;
+            --shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --text-color: #e0e0e0;
+            --input-bg: #2d2d2d;
+            --primary-color: #5d9cec; /* Lighter blue for dark mode */
+            --visual-bg: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        /* Modern Split Layout */
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 900px;
+            min-height: 550px;
+            display: flex;
+            overflow: hidden;
+            animation: fadeIn 0.6s ease-out;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Left Visual Side */
+        .visual-side {
+            flex: 1;
+            background: var(--visual-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: white;
+            text-align: center;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        .mascot-container {
+            margin-bottom: 30px;
+            position: relative;
+            height: 150px;
+            width: 150px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .mascot {
+            font-size: 8rem;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+            animation: float 6s ease-in-out infinite;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+
+        .visual-text h2 { font-size: 2rem; margin-bottom: 10px; font-weight: 700; }
+        .visual-text p { font-size: 1rem; opacity: 0.9; line-height: 1.5; }
+
+        /* Right Form Side */
+        .form-side {
+            flex: 1;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        [data-theme="dark"] .login-container {
+            background: #1e1e1e;
+            color: #e0e0e0;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .role-toggle {
+            display: flex;
+            background: #f0f2f5;
+            padding: 5px;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .role-btn.active {
+            background: white;
+            color: var(--primary-color);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] .role-btn.active {
+            background: #333;
+            color: var(--primary-color);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            color: var(--text-color);
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #666;
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i.icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 15px 14px 45px; /* Left padding for icon */
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background-color: var(--input-bg);
+            font-size: 1rem;
+            color: var(--text-color) !important; /* Force color for dark mode inputs */
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+
+        /* Password toggle eye icon */
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .toggle-password:hover {
+            color: var(--primary-color);
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+        }
+
+        .actions a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .actions a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-login:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .error-msg {
+            color: var(--error-color);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none; /* Hidden by default */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .login-container {
+                flex-direction: column;
+                max-width: 100%;
+                height: 100vh;
+                border-radius: 0;
+            }
+            .visual-side { display: none; } /* Hide visual on very small screens or make it a header */
+            .form-side { padding: 30px; }
+        }
+        @media (max-width: 768px) {
+            .visual-side { padding: 20px; }
+            .mascot { font-size: 5rem; }
+        }
+
+        .theme-toggle-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        [data-theme="dark"] .modal-content {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #aaa;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <button id="theme-toggle" class="theme-toggle-btn"><i class="fas fa-moon"></i></button>
+
+    <div class="login-container">
+        <!-- Left Side: Visual & Mascot -->
+        <div class="visual-side" id="visualSide">
+            <div class="mascot-container">
+                <i class="fas fa-user-graduate mascot" id="mascotIcon"></i>
+            </div>
+            <div class="visual-text">
+                <h2 id="visualTitle">Student Portal</h2>
+                <p id="visualDesc">Track your attendance, view timetable, and manage your profile.</p>
+            </div>
+        </div>
+
+        <!-- Right Side: Login Form -->
+        <div class="form-side">
+            <div class="header">
+                <h1>Welcome Back</h1>
+                <p>Please login to your account</p>
+            </div>
+
+            <div class="role-toggle">
+                <button type="button" class="role-btn active" onclick="setRole('student')">Student</button>
+                <button type="button" class="role-btn" onclick="setRole('staff')">Staff</button>
+                <button type="button" class="role-btn" onclick="setRole('admin')">Admin</button>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginInput" id="loginLabel">Register Number</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-id-card icon" id="loginIcon"></i>
+                        <input type="text" id="loginInput" class="form-control" placeholder="e.g., 91762314001" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock icon"></i>
+                        <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                        <i class="fas fa-eye toggle-password" id="togglePassword"></i>
+                    </div>
+                </div>
+
+                <div class="actions">
+                <label>
+                    <input type="checkbox"> Remember me
+                </label>
+                <a href="register.html" style="font-size: 0.85rem; color: var(--primary-color); text-decoration: none;">
+                    Register New Account
+                </a>
+                <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    Login <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal">
+        <div class="modal-content">
+            <i class="fas fa-times close-modal" id="closeModal"></i>
+            <h2 style="margin-bottom: 1rem; text-align: center; color: var(--text-color);">Reset Password</h2>
+            <p style="margin-bottom: 1.5rem; text-align: center; color: var(--text-color); opacity: 0.8; font-size: 0.9rem;">Verify your identity to set a new password.</p>
+            <form id="forgotPasswordForm">
+                <div class="form-group">
+                    <label for="resetInput">Email or Register No.</label>
+                    <input type="text" id="resetInput" class="form-control" placeholder="e.g., 91762314001 or email@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="resetName">Full Name (Security Check)</label>
+                    <input type="text" id="resetName" class="form-control" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="resetNewPass">New Password</label>
+                    <input type="password" id="resetNewPass" class="form-control" placeholder="Enter new password" required>
+                </div>
+                <button type="submit" class="btn-login">Reset Password</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize LocalStorage Data if empty
+        if (!localStorage.getItem('smartAttendance_users')) {
+            const defaultUsers = [
+                { id: 1, name: 'Administrator', role: 'admin', identifier: 'admin', password: 'admin', is_approved: true },
+                { id: 2, name: 'Dr. Sarah Smith', role: 'staff', email: 'sarah.smith@college.edu', subject: 'Digital Electronics', password: 'password', is_approved: true },
+                { id: 3, name: 'Ananya Sharma', role: 'student', regNo: '91762214001', classId: '2-ece', password: 'password', is_approved: true }
+            ];
+            localStorage.setItem('smartAttendance_users', JSON.stringify(defaultUsers));
+        }
+        if (!localStorage.getItem('smartAttendance_classes')) {
+            const defaultClasses = [
+                { id: '2024-2028', name: 'Batch 2024-2028', icon: 'fa-users', courses: [] },
+                { 
+                    id: '2023-2027', 
+                    name: 'Batch 2023-2027', 
+                    icon: 'fa-user-graduate',
+                    courses: [
+                        { name: 'Database Management Systems', semester: 5, type: 'Mandatory' },
+                        { name: 'Operating Systems', semester: 5, type: 'Mandatory' },
+                        { name: 'Theory of Computation', semester: 5, type: 'Mandatory' },
+                        { name: 'Artificial Intelligence', semester: 5, type: 'Professional Elective' },
+                        { name: 'Data Mining', semester: 5, type: 'Professional Elective' },
+                        { name: 'Introduction to Psychology', semester: 5, type: 'Open Elective' },
+                        { name: 'DBMS Lab', semester: 5, type: 'General' },
+                        { name: 'OS Lab', semester: 5, type: 'General' }
+                    ]
+                },
+                { id: '2022-2026', name: 'Batch 2022-2026', icon: 'fa-user-tie', courses: [] }
+            ];
+            localStorage.setItem('smartAttendance_classes', JSON.stringify(defaultClasses));
+        }
+        if (!localStorage.getItem('smartAttendance_timetable')) localStorage.setItem('smartAttendance_timetable', JSON.stringify({}));
+        if (!localStorage.getItem('smartAttendance_attendance')) localStorage.setItem('smartAttendance_attendance', JSON.stringify({}));
+
+        let currentRole = 'student';
+
+        function setRole(role) {
+            currentRole = role;
+            const btns = document.querySelectorAll('.role-btn');
+            const label = document.getElementById('loginLabel');
+            const input = document.getElementById('loginInput');
+            const icon = document.getElementById('loginIcon');
+            
+            const mascot = document.getElementById('mascotIcon');
+            const vTitle = document.getElementById('visualTitle');
+            const vDesc = document.getElementById('visualDesc');
+            const vSide = document.getElementById('visualSide');
+
+            btns.forEach(btn => btn.classList.remove('active'));
+            
+            if (role === 'student') {
+                btns[0].classList.add('active');
+                label.textContent = 'Register Number';
+                input.placeholder = 'e.g., 91762214001';
+                input.type = 'text';
+                icon.className = 'fas fa-id-card icon';
+                
+                // Visual Updates
+                mascot.className = 'fas fa-user-graduate mascot';
+                vTitle.textContent = 'Student Portal';
+                vDesc.textContent = 'Track your attendance, view timetable, and manage your profile.';
+                vSide.style.background = 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+            } else if (role === 'staff') {
+                btns[1].classList.add('active');
+                label.textContent = 'Email Address';
+                input.placeholder = 'staff@school.edu';
+                input.type = 'email';
+                icon.className = 'fas fa-envelope icon';
+                
+                // Visual Updates
+                mascot.className = 'fas fa-chalkboard-teacher mascot';
+                vTitle.textContent = 'Staff Portal';
+                vDesc.textContent = 'Manage classes, mark attendance, and update student records.';
+                vSide.style.background = 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
+            } else {
+                btns[2].classList.add('active');
+                label.textContent = 'Admin ID';
+                input.placeholder = 'admin';
+                input.type = 'text';
+                icon.className = 'fas fa-user-shield icon';
+                
+                // Visual Updates
+                mascot.className = 'fas fa-shield-alt mascot';
+                vTitle.textContent = 'Admin Portal';
+                vDesc.textContent = 'System configuration, user management, and reports.';
+                vSide.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+            
+            // Trigger Animation
+            mascot.style.opacity = '0';
+            mascot.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                mascot.style.opacity = '1';
+                mascot.style.transform = 'scale(1)';
+            }, 200);
+        }
+        // Set initial state correctly on page load
+        setRole('student');
+
+        // Toggle Password Visibility
+        const togglePassword = document.querySelector('#togglePassword');
+        const passwordInput = document.querySelector('#password');
+
+        togglePassword.addEventListener('click', function () {
+            // Toggle the type attribute
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle the eye icon
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+
+        // Handle Login Submission
+        async function handleLogin(event) {
+            event.preventDefault(); // Prevent actual form submission for demo
+
+            const loginValue = document.getElementById('loginInput').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const btn = document.querySelector('.btn-login');
+
+            // Simple validation simulation
+            if(loginValue && password) {
+                // Simulate loading state
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+                btn.style.opacity = '0.7';
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    const users = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
+                    let user = null;
+
+                    if (currentRole === 'admin') {
+                        if (loginValue === 'admin' && password === 'admin') {
+                            user = { name: 'Administrator', role: 'admin' };
+                        }
+                    } else if (currentRole === 'staff') {
+                        user = users.find(u => u.role === 'staff' && u.email === loginValue && u.password === password);
+                    } else {
+                        user = users.find(u => u.role === 'student' && u.regNo === loginValue && u.password === password);
+                    }
+
+                    if (user) {
+                        const data = { success: true, user: user };
+                        // Add class name lookup for student
+                        if (user.role === 'student') {
+                            const classes = JSON.parse(localStorage.getItem('smartAttendance_classes')) || [];
+                            const cls = classes.find(c => c.id === user.classId);
+                            data.user.className = cls ? cls.name : user.classId;
+                        }
+
+                        if (currentRole === 'student') {
+                            localStorage.setItem('current_student_name', data.user.name);
+                            localStorage.setItem('current_student_regNo', data.user.regNo);
+                            localStorage.setItem('current_student_class_id', data.user.classId);
+                            // Map class ID to name if needed, or just use ID
+                            localStorage.setItem('current_student_class', data.user.className || data.user.classId);
+                            window.location.href = 'student_dashboard.html';
+                        } else if (currentRole === 'staff') {
+                            localStorage.setItem('current_staff_email', data.user.email);
+                            localStorage.setItem('current_staff_name', data.user.name);
+                            window.location.href = 'staff_dashboard.html';
+                        } else {
+                            window.location.href = 'admin_dashboard.html';
+                        }
+                    } else {
+                        alert('Invalid credentials or user not found.');
+                    }
+
+                    btn.innerHTML = originalText;
+                    btn.style.opacity = '1';
+                    btn.disabled = false;
+                }, 500);
+            }
+        }
+
+        // Theme Toggle Logic
+        const themeToggle = document.getElementById('theme-toggle');
+        const savedTheme = localStorage.getItem('theme');
+        
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (savedTheme === 'dark') themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.innerHTML = newTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
+
+        // Forgot Password Modal Logic
+        const modal = document.getElementById('forgotPasswordModal');
+        const link = document.getElementById('forgotPasswordLink');
+        const closeBtn = document.getElementById('closeModal');
+        const forgotForm = document.getElementById('forgotPasswordForm');
+
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            modal.style.display = 'flex';
+        });
+
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        forgotForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('resetInput').value.trim();
+            const name = document.getElementById('resetName').value.trim();
+            const newPass = document.getElementById('resetNewPass').value;
+            const btn = forgotForm.querySelector('button');
+            const originalText = btn.innerText;
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                const users = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
+                const userIndex = users.findIndex(u => 
+                    (u.regNo === input || u.email === input) && 
+                    u.name.toLowerCase() === name.toLowerCase()
+                );
+
+                if (userIndex !== -1) {
+                    users[userIndex].password = newPass;
+                    localStorage.setItem('smartAttendance_users', JSON.stringify(users));
+                    alert('Password reset successfully! You can now login.');
+                    modal.style.display = 'none';
+                    forgotForm.reset();
+                } else {
+                    alert('Verification failed. Please check your details.');
+                }
+                
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
