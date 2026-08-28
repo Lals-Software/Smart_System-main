@@ -563,7 +563,22 @@
                         setTimeout(() => window.location.href = targetPage, 300);
                     }
                 })
-                .catch(err => alert(err.message || 'Invalid credentials or server connection error.'))
+                .catch(err => {
+                    let msg = err.message || 'Invalid credentials or server connection error.';
+                    if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || err.name === 'TypeError') {
+                        const userDomain = prompt(
+                            "Connection Error: Could not connect to Railway backend API at:\n" + API_BASE + 
+                            "\n\nIf your Railway domain is different, enter your active Railway domain below (e.g., https://your-app.up.railway.app):",
+                            API_BASE.replace(/\/api\/?$/, '')
+                        );
+                        if (userDomain) {
+                            const updated = window.setBackendUrl(userDomain);
+                            alert("Backend URL updated to: " + updated + "\nPlease try logging in again!");
+                            return;
+                        }
+                    }
+                    alert(msg);
+                })
                 .finally(() => {
                     btn.innerHTML = originalText;
                     btn.style.opacity = '1';
