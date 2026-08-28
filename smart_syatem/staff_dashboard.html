@@ -90,23 +90,23 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h2><i class="fas fa-chalkboard-teacher"></i> Staff Portal</h2>
-                <button class="close-sidebar" id="closeSidebar"><i class="fas fa-times"></i></button>
+                <button class="close-sidebar" id="closeSidebar" aria-label="Close Sidebar"><i class="fas fa-times"></i></button>
             </div>
             <ul class="menu-items">
                 <li><a href="#" onclick="switchTab('dashboard')" class="active" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
                 <li><a href="#" onclick="switchTab('profile')" id="nav-profile"><i class="fas fa-user"></i> Profile</a></li>
                 <li><a href="#" onclick="switchTab('timetable')" id="nav-timetable"><i class="fas fa-calendar-alt"></i> Timetable</a></li>
                 <li><a href="#" onclick="switchTab('attendance')" id="nav-attendance"><i class="fas fa-user-check"></i> Attendance</a></li>
-                <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li><a href="javascript:void(0)" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <header class="top-bar">
-                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
-                <div class="user-info">
-                    <span id="headerStaffName" style="font-weight: 600; margin-right: 10px;">Staff Name</span> 
+                <button class="menu-toggle" id="menuToggle" aria-label="Toggle Menu"><i class="fas fa-bars"></i></button>
+                <div class="user-info d-flex align-center">
+                    <span id="headerStaffName" class="fw-600 mr-10">Staff Name</span> 
                     <span class="badge badge-info" id="headerStaffId">ID: ---</span>
                 </div>
                 <div class="academic-year">
@@ -125,7 +125,7 @@
                         <div class="profile-avatar"><i class="fas fa-user-tie"></i></div>
                         <div class="profile-details">
                             <h2 id="dashName">Loading...</h2>
-                            <p><i class="fas fa-briefcase"></i> <span id="dashRole">Professor</span> &bull; <span id="dashDept">Computer Science</span></p>
+                            <p><i class="fas fa-briefcase"></i> <span id="dashRole">Professor</span> &bull; <span id="dashDept">Electronics and Communication Engineering</span></p>
                             <p><i class="fas fa-envelope"></i> <span id="dashEmail">email@college.edu</span></p>
                         </div>
                     </div>
@@ -149,7 +149,7 @@
                         </div>
                         <!-- Classes Count -->
                         <div class="card">
-                            <div class="card-icon" style="background: #e8f5e9; color: #2e7d32;"><i class="fas fa-chalkboard"></i></div>
+                            <div class="card-icon classes-bg"><i class="fas fa-chalkboard"></i></div>
                             <div class="card-info">
                                 <h3 id="totalClassesCount">0</h3>
                                 <p>Classes Handled</p>
@@ -168,8 +168,8 @@
 
                 <!-- 2. Profile Section -->
                 <div id="profile-section" class="section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 class="section-title" style="margin-bottom: 0;">My Profile</h3>
+                    <div class="d-flex justify-between align-center mb-15">
+                        <h3 class="section-title mb-0">My Profile</h3>
                         <button class="btn btn-primary" onclick="openEditProfileModal()"><i class="fas fa-edit"></i> Edit Profile</button>
                     </div>
                     <div class="card">
@@ -185,7 +185,7 @@
                         </div>
                     </div>
 
-                    <h3 class="section-title" style="margin-top: 30px;">Teaching Information</h3>
+                    <h3 class="section-title mt-30">Teaching Information</h3>
                     <div class="card">
                         <table>
                             <thead>
@@ -216,38 +216,32 @@
                 <div id="attendance-section" class="section">
                     <h3 class="section-title">Mark Attendance</h3>
                     <div class="card">
-                        <div class="form-group grid-2">
+                        <div class="form-group grid-2 gap-20">
                             <div>
-                                <label style="display:block; margin-bottom:5px;">Select Class & Subject</label>
-                                <select id="attClassSelect" class="form-control" onchange="loadAttendanceStudents()">
+                                <label class="d-block mb-5" for="attClassSelect">Select Class & Subject</label>
+                                <select id="attClassSelect" class="form-control" onchange="updateAvailablePeriods()" aria-label="Select Class and Subject">
                                     <option value="">-- Select Class --</option>
                                 </select>
                             </div>
                             <div>
-                                <label style="display:block; margin-bottom:5px;">Date & Period</label>
-                                <div style="display: flex; gap: 10px;">
-                                    <input type="date" id="attDate" class="form-control" value="">
-                                    <select id="attPeriod" class="form-control" style="width: 120px;">
-                                        <option value="1">Period 1</option>
-                                        <option value="2">Period 2</option>
-                                        <option value="3">Period 3</option>
-                                        <option value="4">Period 4</option>
-                                        <option value="5">Period 5</option>
-                                        <option value="6">Period 6</option>
-                                        <option value="7">Period 7</option>
+                                <label class="d-block mb-5">Date & Period</label>
+                                <div class="d-flex gap-10">
+                                    <input type="date" id="attDate" class="form-control" onchange="updateAvailablePeriods()" aria-label="Attendance Date">
+                                    <select id="attPeriod" class="form-control w-120" onchange="loadAttendanceStudents()" aria-label="Select Period">
+                                        <option value="">-- Period --</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="attendanceStudentList" style="display: none;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div id="attendanceStudentList" class="d-none">
+                            <div class="d-flex justify-between align-center mb-15">
                                 <h4>Student List</h4>
                                 <div>
                                     <span class="badge badge-info">Total: <span id="attTotalCount">0</span></span>
                                 </div>
                             </div>
-                            <table style="margin-bottom: 20px;">
+                            <table class="mb-20">
                                 <thead>
                                     <tr>
                                         <th>Reg No</th>
@@ -270,7 +264,7 @@
     <div id="editProfileModal" class="modal">
         <div class="modal-content">
             <i class="fas fa-times close-modal" onclick="closeModal('editProfileModal')"></i>
-            <h2 style="margin-bottom: 20px;">Edit Profile</h2>
+            <h2 class="mb-20">Edit Profile</h2>
             <form onsubmit="handleProfileUpdate(event)">
                 <div class="form-group">
                     <label>Email Address</label>
@@ -284,51 +278,79 @@
                     <label>New Password <small>(Leave blank to keep current)</small></label>
                     <input type="password" id="editPassword" class="form-control">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
+                <button type="submit" class="btn btn-primary w-100">Save Changes</button>
             </form>
         </div>
     </div>
 
     <script>
-        // --- Data Handling ---
-        // Mock Login: Get user from localStorage or create dummy
-        let currentUser = JSON.parse(localStorage.getItem('smartAttendance_currentUser'));
-        let allUsers = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
-        const allClasses = JSON.parse(localStorage.getItem('smartAttendance_classes')) || [];
-        const allTimetables = JSON.parse(localStorage.getItem('smartAttendance_timetable')) || {};
-        
-        // If no logged in user, simulate one for demonstration
-        if (!currentUser || currentUser.role !== 'staff') {
-            const staff = allUsers.find(u => u.role === 'staff');
-            if (staff) {
-                currentUser = staff;
-            } else {
-                currentUser = {
-                    id: 101,
-                    name: "Dr. Alan Turing",
-                    role: "staff",
-                    email: "alan@college.edu",
-                    teachingAssignments: [
-                        { subject: "Artificial Intelligence", classId: "2024-2028", semester: 4 },
-                        { subject: "Data Structures", classId: "2025-2029", semester: 2 }
-                    ]
-                };
+        const API_BASE = "http://localhost:8081/api";
+        let currentUser = {}; // Will be populated from sessionStorage
+        let globalSettings = {}; // To store fetched settings
+        let teachingAssignments = []; // Fetched from backend
+        let allStudents = []; // Fetched from backend
+        let globalCourseCatalog = [];
+        let staffTimetable = []; // Store allocated timetable entries for attendance filtering
+
+        async function apiFetch(endpoint, options = {}) {
+            const token = sessionStorage.getItem('auth_token');
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            };
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, { ...defaultOptions, ...options });
+                if (response.status === 401) {
+                    logout(); // Redirect to login if unauthorized
+                    return null;
+                }
+                return response;
+            } catch (err) {
+                console.error("API Fetch error:", err);
+                alert("Error connecting to server. Please check if the backend is running.");
+                return null;
             }
         }
 
         // --- Initialization ---
-        document.addEventListener('DOMContentLoaded', () => {
-            initUI();
-            loadDashboardData();
-            loadProfile();
-            loadTimetable();
-            setupAttendance();
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initUI();
+            await loadDashboardData();
+            await loadProfile();
+            await loadTimetable();
             
-            // Set today's date
-            document.getElementById('attDate').valueAsDate = new Date();
+            // Fetch all courses for short-name mapping
+            const courseRes = await apiFetch('/admin/courses');
+            if (courseRes && courseRes.ok) globalCourseCatalog = await courseRes.json();
         });
 
-        function initUI() {
+        function getShortName(fullName) {
+            if (!fullName || fullName === '---') return fullName || '';
+            if (!globalCourseCatalog || globalCourseCatalog.length === 0) return fullName;
+            const target = fullName.trim().toLowerCase();
+            const course = globalCourseCatalog.find(c => 
+                (c.name && c.name.trim().toLowerCase() === target) ||
+                (c.shortName && c.shortName.trim().toLowerCase() === target) ||
+                (c.code && c.code.trim().toLowerCase() === target)
+            );
+            if (course) {
+                if (course.shortName && course.name && course.shortName.toLowerCase() !== course.name.toLowerCase()) {
+                    return `${course.name} (${course.shortName})`;
+                }
+                return course.name || course.code || fullName;
+            }
+            return fullName;
+        }
+
+        async function initUI() {
+            currentUser = JSON.parse(sessionStorage.getItem('smartAttendance_currentUser'));
+            if (!currentUser || currentUser.role.toLowerCase() !== 'staff') {
+                window.location.href = 'login.html';
+                return;
+            }
+
             // Sidebar Toggle
             const sidebar = document.getElementById('sidebar');
             document.getElementById('menuToggle').addEventListener('click', () => sidebar.classList.add('active'));
@@ -336,17 +358,50 @@
 
             // Header Info
             document.getElementById('headerStaffName').textContent = currentUser.name;
-            document.getElementById('headerStaffId').textContent = `ID: ${currentUser.id}`;
+            document.getElementById('headerStaffId').textContent = `ID: ${currentUser.id || 'N/A'}`;
+
+            // Fetch global settings
+            const [settingsRes, batchesRes] = await Promise.all([
+                apiFetch('/admin/semester-settings'),
+                apiFetch('/admin/batches')
+            ]);
+
+            if (settingsRes && settingsRes.ok) {
+                globalSettings = await settingsRes.json();
+                document.getElementById('academicYearDisplay').textContent = globalSettings.academicYear || 'N/A';
+
+                // Constrain the attendance date input based on semester dates from settings
+                const attDateInput = document.getElementById('attDate');
+                if (globalSettings.startDate) attDateInput.min = globalSettings.startDate;
+                if (globalSettings.endDate) attDateInput.max = globalSettings.endDate;
+                
+                // Adjust initial date if today falls outside the semester range
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (globalSettings.startDate && todayStr < globalSettings.startDate) {
+                    attDateInput.value = globalSettings.startDate;
+                } else if (globalSettings.endDate && todayStr > globalSettings.endDate) {
+                    attDateInput.value = globalSettings.endDate;
+                } else {
+                    attDateInput.value = todayStr;
+                }
+            }
+            if (batchesRes && batchesRes.ok) window.allBatches = await batchesRes.json();
         }
 
-        function switchTab(tabName) {
+        async function switchTab(tabName) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.menu-items a').forEach(l => l.classList.remove('active'));
             
-            document.getElementById(`${tabName}-section`).classList.add('active');
+            const targetSection = document.getElementById(`${tabName}-section`);
+            if (targetSection) targetSection.classList.add('active');
             const navItem = document.getElementById(`nav-${tabName}`);
             if(navItem) navItem.classList.add('active');
-            if(tabName === 'dashboard') loadDashboardData();
+            
+            // Reload data for the specific tab
+            if(tabName === 'dashboard') await loadDashboardData();
+            else if (tabName === 'profile') await loadProfile();
+            else if (tabName === 'timetable') await loadTimetable();
+            else if (tabName === 'attendance') await setupAttendance();
             
             // Close sidebar on mobile after click
             if(window.innerWidth <= 768) {
@@ -355,74 +410,52 @@
         }
 
         // --- Dashboard & Profile Logic ---
-        function loadDashboardData() {
-            // Refresh data to ensure latest enrollments are counted
-            allUsers = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
+        async function loadDashboardData() {
+            const dashboardRes = await apiFetch(`/staff/dashboard-stats/${currentUser.username}`); // Assuming this endpoint exists
+            if (!dashboardRes || !dashboardRes.ok) return;
+            const stats = await dashboardRes.json();
 
+            // Update UI with fetched data
             document.getElementById('dashName').textContent = currentUser.name;
             document.getElementById('dashEmail').textContent = currentUser.email;
             
-            // Calculate Stats
-            const assignments = currentUser.teachingAssignments || [];
-            document.getElementById('totalClassesCount').textContent = assignments.length;
-
-            // Count total students in assigned classes
-            const uniqueStudentIds = new Set();
-            assignments.forEach(assign => {
-                const studentsInClass = allUsers.filter(u => 
-                    u.role === 'student' && 
-                    u.classId === assign.classId && 
-                    u.enrolledCourses && 
-                    u.enrolledCourses.includes(assign.subject)
-                );
-                studentsInClass.forEach(s => uniqueStudentIds.add(s.id));
-            });
-            document.getElementById('totalStudentsAssigned').textContent = uniqueStudentIds.size;
-
-            // Calculate Workload (Count occurrences in timetable)
-            let weeklyHours = 0;
-            const mySubjects = assignments.map(a => a.subject);
-            
-            Object.values(allTimetables).forEach(classTt => {
-                Object.values(classTt).forEach(dayPeriods => {
-                    Object.values(dayPeriods).forEach(subject => {
-                        if(mySubjects.includes(subject)) weeklyHours++;
-                    });
-                });
-            });
-            document.getElementById('weeklyHours').textContent = weeklyHours || assignments.length * 3; // Fallback estimate
+            document.getElementById('totalClassesCount').textContent = stats.classesHandled || 0;
+            document.getElementById('totalStudentsAssigned').textContent = stats.totalStudentsAssigned || 0;
+            document.getElementById('weeklyHours').textContent = stats.weeklyHours || 0;
         }
 
-        function loadProfile() {
-            allUsers = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
+        async function loadProfile() {
+            const profileRes = await apiFetch(`/staff/profile/${currentUser.username}`);
+            if (!profileRes || !profileRes.ok) return;
+            const staffProfile = await profileRes.json();
 
             document.getElementById('profName').textContent = currentUser.name;
             document.getElementById('profId').textContent = currentUser.id;
             document.getElementById('profEmail').textContent = currentUser.email;
-            // Phone is not in base object in this context, but handled in edit logic
 
             const tbody = document.getElementById('teachingInfoBody');
             tbody.innerHTML = '';
-            const assignments = currentUser.teachingAssignments || [];
+            teachingAssignments = staffProfile.teachingAssignments || []; // Update global assignments
             
-            if(assignments.length === 0) {
+            if(teachingAssignments.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5">No subjects assigned yet.</td></tr>';
             } else {
-                assignments.forEach(assign => {
-                    const cls = allClasses.find(c => c.id === assign.classId);
-                    const className = cls ? cls.name : assign.classId;
+                // Fetch all students to calculate enrolled count
+                const studentsRes = await apiFetch('/admin/users');
+                if (studentsRes && studentsRes.ok) allStudents = await studentsRes.json();
+
+                teachingAssignments.forEach(assign => {
+                    const cls = (window.allBatches || []).find(b => b.id === assign.batchId || b.name === assign.batchId); 
+                    const className = cls ? cls.name : (assign.batchId || '-');
                     
                     // Calculate enrolled count for this specific subject
-                    const enrolledCount = allUsers.filter(u => 
-                        u.role === 'student' && 
-                        u.classId === assign.classId && 
-                        u.enrolledCourses && 
-                        u.enrolledCourses.includes(assign.subject)
+                    const enrolledCount = allStudents.filter(u => 
+                        (u.role || '').toLowerCase() === 'student'
                     ).length;
 
                     tbody.innerHTML += `
                         <tr>
-                            <td><strong>${assign.subject}</strong></td>
+                            <td><strong>${getShortName(assign.subject)}</strong></td>
                             <td>${className}</td>
                             <td>Sem ${assign.semester || '-'}</td>
                             <td><span class="badge badge-info">Theory</span></td>
@@ -434,88 +467,199 @@
         }
 
         // --- Timetable Logic ---
-        function loadTimetable() {
+        async function loadTimetable() {
             const container = document.getElementById('timetableContainer');
-            container.innerHTML = '';
+            container.innerHTML = '<p class="text-center text-muted">Loading assignments...</p>';
             const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-            const mySubjects = (currentUser.teachingAssignments || []).map(a => a.subject);
+            
+            // Fetch timetable entries for all years (1-4) to aggregate staff assignments
+            const years = ['1', '2', '3', '4'];
+            let allEntries = [];
+            
+            try {
+                const results = await Promise.all(years.map(y => apiFetch(`/timetable/admin?year=${y}`)));
+                for (let res of results) {
+                    if (res && res.ok) {
+                        const data = await res.json();
+                        allEntries = allEntries.concat(data);
+                    }
+                }
+            } catch (err) {
+                console.error("Timetable aggregation failed:", err);
+            }
+
+            // Store filtered assignments globally for the attendance period dropdown
+            staffTimetable = allEntries.filter(e => 
+                e.staffName && 
+                e.staffName.trim().toLowerCase() === currentUser.name.trim().toLowerCase()
+            );
+
+            container.innerHTML = '';
+            let hasAnyClass = false;
 
             days.forEach(day => {
                 let dayHtml = `<div class="timetable-day"><h4>${day}</h4><div class="period-list">`;
-                let hasClass = false;
+                let hasClassOnDay = false;
 
-                // Scan all class timetables for my subjects
-                allClasses.forEach(cls => {
-                    const classTt = allTimetables[cls.id];
-                    if(classTt && classTt[day]) {
-                        for(let period=1; period<=7; period++) {
-                            const subject = classTt[day][period];
-                            if(subject && mySubjects.includes(subject)) {
-                                hasClass = true;
-                                dayHtml += `
-                                    <div class="period-item">
-                                        <div class="period-num">Period ${period}</div>
-                                        <div class="period-subject">${subject}</div>
-                                        <div class="period-class">${cls.name}</div>
-                                    </div>
-                                `;
-                            }
-                        }
-                    }
+                const myClasses = staffTimetable.filter(e => e.day === day);
+
+                myClasses.sort((a,b) => a.period - b.period).forEach(e => {
+                    hasClassOnDay = true;
+                    hasAnyClass = true;
+                    dayHtml += `
+                        <div class="period-item">
+                            <div class="period-num">Period ${e.period}</div>
+                            <div class="period-subject">${getShortName(e.subject)}</div>
+                            <div class="period-class">${e.type}</div>
+                        </div>
+                    `;
                 });
 
                 dayHtml += `</div></div>`;
-                if(hasClass) container.innerHTML += dayHtml;
+                if(hasClassOnDay) container.innerHTML += dayHtml;
             });
 
-            if(container.innerHTML === '') {
-                container.innerHTML = '<p style="color:#777;">No classes scheduled for this week.</p>';
+            if (!hasAnyClass) {
+                container.innerHTML = '<div class="card p-20 text-center text-muted">No classes assigned for you in this week\'s schedule.</div>';
             }
         }
 
         // --- Attendance Logic ---
-        function setupAttendance() {
+        async function setupAttendance() {
             const select = document.getElementById('attClassSelect');
-            const assignments = currentUser.teachingAssignments || [];
-            assignments.forEach(assign => {
-                const cls = allClasses.find(c => c.id === assign.classId);
-                const name = cls ? cls.name : assign.classId;
+            select.innerHTML = '<option value="">-- Select Class & Subject --</option>';
+
+            if (!globalCourseCatalog || globalCourseCatalog.length === 0) {
+                const courseRes = await apiFetch('/admin/courses');
+                if (courseRes && courseRes.ok) globalCourseCatalog = await courseRes.json();
+            }
+
+            if (!teachingAssignments || teachingAssignments.length === 0) {
+                const profileRes = await apiFetch(`/staff/profile/${currentUser.username}`);
+                if (profileRes && profileRes.ok) {
+                    const staffProfile = await profileRes.json();
+                    teachingAssignments = staffProfile.teachingAssignments || [];
+                }
+            }
+
+            if (!staffTimetable || staffTimetable.length === 0) {
+                await loadTimetable();
+            }
+
+            const optionsMap = new Map();
+
+            (teachingAssignments || []).forEach(assign => {
+                const cls = (window.allBatches || []).find(c => c.id === assign.batchId || c.name === assign.batchId);
+                const name = cls ? cls.name : (assign.batchId || 'Class');
+                const key = `${assign.batchId || 'all'}|${assign.subject}`;
+                const label = `${name} - ${getShortName(assign.subject)}`;
+                optionsMap.set(key, { value: key, label: label });
+            });
+
+            (staffTimetable || []).forEach(slot => {
+                if (slot.subject) {
+                    const yearLabel = slot.year ? `Year ${slot.year}` : 'Class';
+                    const key = `${slot.year || 'all'}|${slot.subject}`;
+                    if (!optionsMap.has(key)) {
+                        const label = `${yearLabel} - ${getShortName(slot.subject)}`;
+                        optionsMap.set(key, { value: key, label: label });
+                    }
+                }
+            });
+
+            optionsMap.forEach(opt => {
                 const option = document.createElement('option');
-                option.value = `${assign.classId}|${assign.subject}`;
-                option.textContent = `${name} - ${assign.subject}`;
+                option.value = opt.value;
+                option.textContent = opt.label;
                 select.appendChild(option);
             });
         }
 
-        function loadAttendanceStudents() {
+        function updateAvailablePeriods() {
+            const classSelect = document.getElementById('attClassSelect');
+            const dateInput = document.getElementById('attDate');
+            const periodSelect = document.getElementById('attPeriod');
+            const listDiv = document.getElementById('attendanceStudentList');
+
+            periodSelect.innerHTML = '<option value="">-- Period --</option>';
+            listDiv.style.display = 'none';
+
+            if (!classSelect.value || !dateInput.value) return;
+
+            const [batchId, subject] = classSelect.value.split('|');
+            const date = new Date(dateInput.value);
+            
+            // Get day name (Monday, Tuesday, etc.)
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const selectedDay = days[date.getDay()];
+
+            // Filter the staff's timetable for this specific day and subject
+            const availableSlots = staffTimetable.filter(e => 
+                e.day === selectedDay && 
+                (e.subject === subject || getShortName(e.subject) === getShortName(subject))
+            );
+
+            if (availableSlots.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = "";
+                opt.textContent = `No assigned periods for ${selectedDay}`;
+                opt.disabled = true;
+                periodSelect.appendChild(opt);
+                return;
+            }
+
+            // Sort and populate periods
+            availableSlots.sort((a, b) => a.period - b.period).forEach(slot => {
+                const opt = document.createElement('option');
+                opt.value = slot.period;
+                opt.textContent = `Period ${slot.period}: ${getShortName(slot.subject)} (${slot.type})`;
+                periodSelect.appendChild(opt);
+            });
+            
+            // Auto-load if only one period exists
+            if (availableSlots.length === 1) {
+                periodSelect.value = availableSlots[0].period;
+                loadAttendanceStudents();
+            }
+        }
+
+        async function loadAttendanceStudents() {
             const classId = document.getElementById('attClassSelect').value;
+            const period = document.getElementById('attPeriod').value;
             const listDiv = document.getElementById('attendanceStudentList');
             const tbody = document.getElementById('attTableBody');
-            tbody.innerHTML = '';
 
-            if(!classId) {
+            if(!classId || !period) {
                 listDiv.style.display = 'none';
                 return;
             }
 
-            // Refresh users data to get latest enrollments
-            allUsers = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
-
             const [cId, subject] = classId.split('|');
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading students...</td></tr>';
 
-            const students = allUsers.filter(u => u.role === 'student' && u.classId === cId && u.enrolledCourses && u.enrolledCourses.includes(subject));
+            const encodedSubject = encodeURIComponent(subject);
+            const encodedBatchId = encodeURIComponent(cId || 'all');
+            const studentsRes = await apiFetch(`/staff/students-for-attendance/${encodedBatchId}/${encodedSubject}`);
+            if (!studentsRes || !studentsRes.ok) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Failed to load students.</td></tr>';
+                listDiv.style.display = 'block';
+                return;
+            }
+            const students = await studentsRes.json();
+
             document.getElementById('attTotalCount').textContent = students.length;
 
+            tbody.innerHTML = '';
             if(students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3">No enrolled students found for this subject.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center">No enrolled students found for this subject.</td></tr>';
             } else {
                 students.forEach(s => {
                     tbody.innerHTML += `
                         <tr>
-                            <td>${s.regNo}</td>
+                            <td>${s.identifier || s.username || '-'}</td>
                             <td>${s.name}</td>
                             <td>
-                                <label style="margin-right:10px;"><input type="radio" name="att_${s.id}" value="present" checked> Present</label>
+                                <label class="mr-10"><input type="radio" name="att_${s.id}" value="present" checked> Present</label>
                                 <label><input type="radio" name="att_${s.id}" value="absent"> Absent</label>
                             </td>
                         </tr>
@@ -525,40 +669,56 @@
             listDiv.style.display = 'block';
         }
 
-        function saveAttendance() {
+        async function saveAttendance() {
             const selectValue = document.getElementById('attClassSelect').value;
             const date = document.getElementById('attDate').value;
             const period = document.getElementById('attPeriod').value;
             
-            if(!selectValue || !date) {
-                alert('Please select class and date.');
+            if(!selectValue || !date || !period) {
+                alert('Please select class, date, and a valid period.');
+                return;
+            }
+
+            // Final validation for date bounds before submission
+            if ((globalSettings.startDate && date < globalSettings.startDate) || 
+                (globalSettings.endDate && date > globalSettings.endDate)) {
+                alert("The selected date is outside the current semester range defined by Admin.");
                 return;
             }
 
             const [classId, subject] = selectValue.split('|');
 
-            // Get existing attendance or init
-            const attendanceData = JSON.parse(localStorage.getItem('smartAttendance_attendance')) || {};
-            if(!attendanceData[date]) attendanceData[date] = {};
-            if(!attendanceData[date][classId]) attendanceData[date][classId] = {};
-            if(!attendanceData[date][classId][period]) attendanceData[date][classId][period] = {};
-
             // Collect data
-            const students = allUsers.filter(u => u.role === 'student' && u.classId === classId && u.enrolledCourses && u.enrolledCourses.includes(subject));
+            const studentsRes = await apiFetch(`/staff/students-for-attendance/${classId}/${subject}`);
+            if (!studentsRes || !studentsRes.ok) return;
+            const students = await studentsRes.json();
+
+            const attendanceRecords = [];
             let presentCount = 0;
             
             students.forEach(s => {
                 const radios = document.getElementsByName(`att_${s.id}`);
                 let status = 'present';
                 for(const r of radios) {
-                    if(r.checked) status = r.value;
+                    if(r.checked) status = r.value; // Get selected status
                 }
-                attendanceData[date][classId][period][s.id] = status;
+                attendanceRecords.push({
+                    studentId: s.id,
+                    date: date,
+                    period: parseInt(period),
+                    status: status,
+                    classId: classId,
+                    subject: subject
+                });
                 if(status === 'present') presentCount++;
             });
 
-            localStorage.setItem('smartAttendance_attendance', JSON.stringify(attendanceData));
-            alert(`Attendance Saved!\nPresent: ${presentCount}\nAbsent: ${students.length - presentCount}`);
+            const saveRes = await apiFetch('/staff/attendance', { method: 'POST', body: JSON.stringify(attendanceRecords) }); // Assuming this endpoint exists
+            if (saveRes && saveRes.ok) {
+                alert(`Attendance Saved!\nPresent: ${presentCount}\nAbsent: ${students.length - presentCount}`);
+            } else {
+                alert("Failed to save attendance.");
+            }
         }
 
         // --- Profile Edit Logic ---
@@ -579,32 +739,32 @@
             }
         }
 
-        function handleProfileUpdate(e) {
+        async function handleProfileUpdate(e) {
             e.preventDefault();
             const email = document.getElementById('editEmail').value;
             const phone = document.getElementById('editPhone').value;
             const password = document.getElementById('editPassword').value;
 
-            const userIndex = allUsers.findIndex(u => u.id === currentUser.id);
-            if (userIndex !== -1) {
-                allUsers[userIndex].email = email;
-                allUsers[userIndex].phone = phone;
-                if (password) allUsers[userIndex].password = password;
-                
-                localStorage.setItem('smartAttendance_users', JSON.stringify(allUsers));
-                currentUser = allUsers[userIndex]; // Update local session
-                localStorage.setItem('smartAttendance_currentUser', JSON.stringify(currentUser));
-                
-                loadProfile();
-                loadDashboardData();
+            const updatedUser = { ...currentUser, email: email, phone: phone };
+            if (password) updatedUser.password = password; // Hash this in a real app!
+
+            const updateRes = await apiFetch(`/staff/profile/${currentUser.username}`, {
+                method: 'PUT',
+                body: JSON.stringify(updatedUser)
+            });
+
+            if (updateRes && updateRes.ok) {
+                sessionStorage.setItem('smartAttendance_currentUser', JSON.stringify(updatedUser)); // Update sessionStorage
+                await loadProfile();
+                await loadDashboardData();
                 closeModal('editProfileModal');
                 alert('Profile updated successfully!');
             }
         }
 
-        function logout() {
-            // Clear current user session if needed, or just redirect
-            window.location.href = 'login.html'; // Redirecting to main landing for now
+        function logout() { // Clear all session data
+            sessionStorage.clear();
+            window.location.href = 'login.html';
         }
     </script>
 </body>

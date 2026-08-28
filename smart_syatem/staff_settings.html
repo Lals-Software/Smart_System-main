@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings | Smart Attendance System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="staff_settings.css">
     <style>
         :root {
             --primary-color: #4a90e2;
@@ -79,6 +80,10 @@
             box-shadow: var(--shadow);
         }
 
+        .settings-card h2 {
+            margin-bottom: 1.5rem;
+        }
+
         .form-group {
             margin-bottom: 1.5rem;
         }
@@ -130,7 +135,7 @@
 
         <main>
             <div class="settings-card">
-                <h2 style="margin-bottom: 1.5rem;">Change Password</h2>
+                <h2 class="section-title">Change Password</h2>
                 
                 <div id="status-message" class="message"></div>
 
@@ -180,29 +185,43 @@
             btn.innerText = 'Updating...';
             btn.disabled = true;
 
-            const email = localStorage.getItem('current_staff_email');
-            if (!email) {
+            const currentUser = JSON.parse(sessionStorage.getItem('smartAttendance_currentUser'));
+            if (!currentUser || currentUser.role.toLowerCase() !== 'staff') {
                 showMessage('Error: User session not found. Please login again.', 'error');
                 btn.innerText = originalText;
                 btn.disabled = false;
                 return;
             }
 
-            setTimeout(() => {
-                const users = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
-                const userIndex = users.findIndex(u => u.email === email && u.role === 'staff');
-                
-                if (userIndex !== -1 && users[userIndex].password === currentPass) {
-                    users[userIndex].password = newPass;
-                    localStorage.setItem('smartAttendance_users', JSON.stringify(users));
+            // Assuming an API_BASE is defined globally or passed
+            const API_BASE = "http://localhost:8081/api";
+            const token = sessionStorage.getItem('auth_token');
+
+            fetch(`${API_BASE}/staff/profile/${currentUser.username}`, { // Assuming username is email for staff
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ ...currentUser, password: newPass }) 
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
                     showMessage('Password updated successfully!', 'success');
                     form.reset();
-                } else {
-                    showMessage('Invalid current password.', 'error');
-                }
+            })
+            .catch(error => {
+                showMessage(error.message || 'Failed to update password. Invalid current password or server error.', 'error');
+            })
+            .finally(() => {
                 btn.innerText = originalText;
                 btn.disabled = false;
-            }, 500);
+            });
         });
 
         function showMessage(text, type) {

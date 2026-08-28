@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | Smart Attendance System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+<div class="login-container">
+    <div class="visual-side">
+        <div class="mascot-container">
+            <i class="fas fa-user-graduate mascot"></i>
+        </div>
+        <div class="visual-text">
+            <h2>Smart Attendance</h2>
+            <p>Track attendance, manage students, and access the portal securely.</p>
+        </div>
+    </div>
+
+    <div class="form-side">
+        <div class="header">
+            <h1>Welcome Back</h1>
+            <p>Please login to your account</p>
+        </div>
+
+        <div th:if="${loginError}" class="error-msg" style="display:block; margin-bottom: 1rem;">
+            <span th:text="${loginError}"></span>
+        </div>
+
+        <form th:action="@{/login}" method="post" th:object="${loginForm}">
+            <div class="form-group">
+                <label for="role">User Role</label>
+                <select id="role" name="role" class="form-control" th:field="*{role}">
+                    <option value="student">Student</option>
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input id="username" type="text" class="form-control" th:field="*{username}" placeholder="Register No. / Email / Admin ID" required />
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input id="password" type="password" class="form-control" th:field="*{password}" placeholder="Enter your password" required />
+            </div>
+            <button type="submit" class="btn-login">Login</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

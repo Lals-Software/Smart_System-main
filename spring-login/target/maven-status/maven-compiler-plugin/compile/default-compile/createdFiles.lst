@@ -1,0 +1,6 @@
+com\smartsyatem\model\LoginForm.class
+com\smartsyatem\config\DataInitializer.class
+com\smartsyatem\entity\UserAccount.class
+com\smartsyatem\repository\UserAccountRepository.class
+com\smartsyatem\controller\LoginController.class
+com\smartsyatem\SmartSystemApplication.class

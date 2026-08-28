@@ -17,10 +17,11 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
         body {
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 40px 20px;
             background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2000&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
@@ -73,6 +74,8 @@
             transition: all 0.3s;
         }
 
+        .hidden { display: none; }
+
         .role-btn.active {
             background: white;
             color: var(--primary-color);
@@ -93,6 +96,11 @@
             margin-top: 1rem;
         }
 
+        .flex-row { display: flex; gap: 10px; margin-bottom: 1.2rem; }
+        .flex-item { flex: 1; }
+
+        .mb-10 { margin-bottom: 10px; }
+
         .btn-register:hover { background-color: var(--primary-hover); }
 
         .login-link {
@@ -102,12 +110,18 @@
         }
         .login-link a { color: var(--primary-color); text-decoration: none; font-weight: 600; }
         .login-link a:hover { text-decoration: underline; }
+
+        /* Mobile Alignment Fix */
+        @media (max-width: 480px) {
+            .flex-row { flex-direction: column; }
+            .register-container { padding: 1.5rem; }
+        }
     </style>
 </head>
 <body>
     <div class="register-container">
         <div class="header">
-            <i class="fas fa-user-plus fa-3x" style="color: var(--primary-color); margin-bottom: 10px;"></i>
+            <i class="fas fa-user-plus fa-3x primary-text mb-10"></i>
             <h1>Student Registration</h1>
             <p>Create your account to access the portal</p>
         </div>
@@ -131,7 +145,7 @@
             </div>
 
             <div class="form-group">
-                <label>Batch</label>
+                <label for="classId">Batch</label>
                 <select id="classId" class="form-control" required>
                     <option value="">Loading batches...</option>
                 </select>
@@ -139,7 +153,7 @@
             </div>
 
             <!-- Staff Fields -->
-            <div id="staffFields" style="display: none;">
+            <div id="staffFields" class="hidden">
                 <div class="form-group">
                     <label>Email Address</label>
                     <input type="email" id="email" class="form-control" placeholder="staff@college.edu">
@@ -147,13 +161,13 @@
                 
                 <div class="form-group">
                     <label>Primary Teaching Assignment</label>
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <input type="text" id="staffSubject" class="form-control" placeholder="Subject" style="flex: 1;">
-                        <select id="staffClassId" class="form-control" style="flex: 1;">
+                    <div class="flex-row">
+                        <input type="text" id="staffSubject" class="form-control flex-item" placeholder="Subject">
+                        <select id="staffClassId" class="form-control flex-item" aria-label="Batch">
                             <option value="">Batch</option>
                         </select>
                     </div>
-                    <select id="staffSemester" class="form-control">
+                    <select id="staffSemester" class="form-control" title="Primary Teaching Semester" aria-label="Primary Teaching Semester">
                         <option value="">Select Semester</option>
                         <option value="1">Sem 1</option>
                         <option value="2">Sem 2</option>
@@ -185,10 +199,15 @@
 
         // Fetch classes on load
         document.addEventListener('DOMContentLoaded', async () => {
-            const classes = JSON.parse(localStorage.getItem('smartAttendance_classes')) || [];
-            const options = classes.length ? classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('') : '<option value="">No batches found</option>';            
-            document.getElementById('classId').innerHTML = options;
-            document.getElementById('staffClassId').innerHTML = '<option value="">Select Batch</option>' + options;
+            try {
+                const res = await fetch('http://localhost:8081/api/admin/batches');
+                const classes = res.ok ? await res.json() : [];
+                const options = classes.length ? classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('') : '<option value="">No batches found</option>';            
+                document.getElementById('classId').innerHTML = options;
+                document.getElementById('staffClassId').innerHTML = '<option value="">Select Batch</option>' + options;
+            } catch (err) {
+                console.error("Failed to load batches:", err);
+            }
         });
 
         function setRole(role) {
@@ -222,52 +241,37 @@
             btn.innerText = 'Registering...';
             btn.disabled = true;
 
-            setTimeout(() => {
-                const users = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
-                let newUser = null;
-                
-                if (currentRole === 'student') {
-                    const regNo = document.getElementById('regNo').value.trim();
-                    const classId = document.getElementById('classId').value;
-                    
-                    if (users.some(u => u.regNo === regNo)) {
-                        alert('Student with this Register No already exists.');
-                        btn.innerText = originalText;
-                        btn.disabled = false;
-                        return;
-                    }
-                    newUser = {
-                        id: Date.now(), name, role: 'student', regNo, classId, password, is_approved: true
-                    };
-                } else {
-                    const email = document.getElementById('email').value.trim();
-                    const subject = document.getElementById('staffSubject').value.trim();
-                    const classId = document.getElementById('staffClassId').value;
-                    const semester = document.getElementById('staffSemester').value;
+            const payload = {
+                name: name,
+                username: currentRole === 'student' ? document.getElementById('regNo').value : document.getElementById('email').value,
+                password: password,
+                role: currentRole,
+                batchId: currentRole === 'student' ? document.getElementById('classId').value : null
+            };
 
-                    if (users.some(u => u.email === email)) {
-                        alert('Staff with this Email already exists.');
-                        btn.innerText = originalText;
-                        btn.disabled = false;
-                        return;
-                    }
-                    newUser = {
-                        id: Date.now(), name, role: 'staff', email, password, is_approved: true,
-                        subject: subject, // Legacy support
-                        teachingAssignments: [{ subject, classId, semester }]
-                    };
-                }
+            if (currentRole === 'staff') {
+                payload.staffSubject = document.getElementById('staffSubject').value;
+                payload.staffClassId = document.getElementById('staffClassId').value;
+                payload.staffSemester = document.getElementById('staffSemester').value;
+            }
 
-                if (newUser) {
-                    users.push(newUser);
-                    localStorage.setItem('smartAttendance_users', JSON.stringify(users));
-                    alert('Registration successful.');
+            fetch('http://localhost:8081/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) {
+                    alert('Registration successful! You can now log in.');
                     window.location.href = 'login.html';
+                } else {
+                    alert('Registration failed. Username might already exist.');
                 }
-
+            })
+            .finally(() => {
                 btn.innerText = originalText;
                 btn.disabled = false;
-            }, 500);
+            });
         }
     </script>
 </body>

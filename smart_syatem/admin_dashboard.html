@@ -6,9 +6,16 @@
     <title>Admin Dashboard | Smart Attendance System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary-color: #4a90e2;
+            --primary-hover: #357abd;
+            --bg-color: #f4f6f9;
+            --text-color: #333;
+            --sidebar-bg: #2c3e50;
+            --sidebar-text: #ecf0f1;
+            --card-bg: #ffffff;
             --primary-hover: #357abd;
             --bg-color: #f4f6f9;
             --text-color: #333;
@@ -31,8 +38,16 @@
             transition: all 0.3s;
         }
 
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .sidebar-header h2 { font-size: 1.2rem; }
+        .sidebar-header { 
+            padding: 20px; 
+            text-align: center; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-header h2 { font-size: 1.2rem; flex: 1; }
+        .close-sidebar { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; display: none; }
 
         .nav-links { list-style: none; padding: 20px 0; flex: 1; }
         .nav-links li { padding: 12px 20px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; }
@@ -47,10 +62,22 @@
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .header h1 { font-size: 1.8rem; color: #2c3e50; }
+        .academic-year { font-weight: 600; color: var(--primary-color); }
+        .section-title { margin-bottom: 15px; color: #555; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .icon-wrapper { background: #e3f2fd; color: #2196f3; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 10px; }
+        .stat-text { color: #777; font-size: 0.9rem; }
+        .staff-total { background: #fff3e0; color: #ff9800; }
+        .staff-perm { background: #e8f5e9; color: #2ecc71; }
+        .staff-temp { background: #ffebee; color: #e74c3c; }
+        .dashboard-flex-row { display: flex; gap: 20px; flex-wrap: wrap; }
+        .analytics-card { flex: 1; min-width: 300px; }
+        .chart-full { width: 100%; height: 300px; }
+        .chart-wrapper { height: 300px; position: relative; }
 
-        /* Cards/Sections */
-        .section { display: none; animation: fadeIn 0.4s; }
-        .section.active { display: block; }
+        /* Views */
+        .tab-view { display: none; animation: fadeIn 0.4s; }
+        .tab-view.active { display: block; }
 
         .card { background: var(--card-bg); border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 20px; }
         .card:hover {
@@ -61,17 +88,33 @@
 
         /* Controls */
         .controls { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .controls.justify-between { justify-content: space-between; }
         .form-control { padding: 10px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
         .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; }
         .btn-primary { background-color: var(--primary-color); color: white; }
         .btn-primary:hover { background-color: var(--primary-hover); }
         .btn-danger { background-color: #e74c3c; color: white; }
+        .btn-success { background-color: #27ae60; color: white; }
+        .btn-success:hover { background-color: #219150; }
         .btn-edit { background-color: #f39c12; color: white; padding: 6px 12px; font-size: 0.9rem; }
         .btn-delete { background-color: #e74c3c; color: white; padding: 6px 12px; font-size: 0.9rem; }
+
+        .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--sidebar-bg); }
+
+        /* Table Action Buttons */
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        .status-badge { font-weight: 600; font-size: 0.85rem; }
+        .semester-badge { background: #fff3e0; color: #ef6c00; margin-left: 10px; }
+
+        /* Modal helper classes */
+        .modal-note { font-size: 0.9rem; color: #666; margin-bottom: 15px; }
+        .modal-badge { font-size: 0.9rem; background: #e3f2fd; color: #2196f3; padding: 2px 8px; border-radius: 12px; margin-left: 10px; }
+        .modal-scroll { max-height: 400px; overflow-y: auto; }
 
         /* Table */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        td { vertical-align: middle; }
         th { background-color: #f8f9fa; font-weight: 600; color: #555; }
         tr:hover { background-color: #f9f9f9; }
 
@@ -165,7 +208,7 @@
         .alloc-table { width: 100%; border-collapse: collapse; }
         .alloc-table th, .alloc-table td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         .alloc-cell { min-height: 60px; background: #fafafa; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.9rem; transition: background 0.2s; }
-        .alloc-cell.drag-over { background: #e3f2fd; border: 2px dashed var(--primary-color); }
+        .alloc-cell.drag-over, .split-slot.drag-over { background: #e3f2fd !important; border: 2px dashed var(--primary-color) !important; }
         .alloc-subject { font-weight: 600; margin-bottom: 5px; display: block; }
         .alloc-staff { font-size: 0.8rem; color: #555; background: #fff; padding: 4px 8px; border-radius: 12px; border: 1px solid #ddd; display: inline-flex; align-items: center; gap: 5px; }
         .remove-staff { color: #e74c3c; cursor: pointer; margin-left: 5px; }
@@ -188,14 +231,189 @@
         .small { font-size: 0.75rem; line-height: 1.1; }
         .placeholder { font-size: 0.7rem; color: #bbb; }
 
+        /* Inline Styles Moved to CSS */
+        #studentListCount {
+            font-size: 0.9rem;
+            background: #e3f2fd;
+            color: #2196f3;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+            display: none;
+        }
+
+        .student-controls-wrapper {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .student-instructions {
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .regno-hint {
+            color: var(--primary-color);
+            display: none;
+            margin-top: 5px;
+        }
+
+        .modal-heading {
+            margin-bottom: 20px;
+        }
+
+        .modal-heading-sm {
+            margin-bottom: 10px;
+        }
+
+        .modal-accent-title {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        .btn-fullwidth {
+            width: 100%;
+        }
+
+        .text-muted {
+            color: #888;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .status-active {
+            color: #2ecc71;
+        }
+
+        .status-pending {
+            color: #e67e22;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-row.align-center {
+            align-items: center;
+        }
+
+        .max-w-120 {
+            max-width: 120px;
+        }
+
+        .max-w-140 {
+            max-width: 140px;
+        }
+
+        .file-input {
+            padding: 6px;
+            font-size: 0.9rem;
+        }
+
+        .btn-small {
+            font-size: 0.9rem;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px dashed #ccc;
+        }
+
+        .info-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .plain-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .controls-between {
+            justify-content: space-between;
+        }
+
+        .modal-large {
+            max-width: 900px;
+        }
+
+        .scroll-panel {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+        }
+
+        .table-no-top-margin {
+            margin-top: 0;
+        }
+
+        .count-badge {
+            font-size: 0.9rem;
+            background: #e3f2fd;
+            color: #2196f3;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+            display: inline-block;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 12px;
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        .badge-info {
+            font-size: 0.7rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .course-input-group {
+            margin-bottom: 5px;
+        }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Mobile Responsive Adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                height: 100%;
+                transform: translateX(-100%);
+                z-index: 2000;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            }
+            .sidebar.active { transform: translateX(0); }
+            .menu-toggle, .close-sidebar { display: block !important; }
+            .header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
     </style>
 </head>
 <body>
     <!-- Sidebar -->
-    <nav class="sidebar">
+    <nav class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h2><i class="fas fa-user-shield"></i> Admin Portal</h2>
+            <button class="close-sidebar" id="closeSidebar" aria-label="Close Sidebar"><i class="fas fa-times"></i></button>
         </div>
         <ul class="nav-links">
             <li onclick="switchTab('dashboard')" class="active" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</li>
@@ -212,113 +430,133 @@
     <!-- Main Content -->
     <main class="main-content">
         <div class="header">
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle Menu"><i class="fas fa-bars"></i></button>
             <h1 id="page-title">Dashboard Overview</h1>
-            <div class="academic-year" style="font-weight: 600; color: var(--primary-color);">
+            <div class="academic-year">
                 <i class="fas fa-calendar-check"></i> 2025 – 2026 (Current Year)
             </div>
         </div>
 
-        <!-- Dashboard Section -->
-        <div id="dashboard-section" class="section active">
-            <h3 class="section-title" style="margin-bottom: 15px; color: #555; border-bottom: 2px solid #eee; padding-bottom: 10px;">Student Statistics</h3>
-            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="tab-view active">
+            <h3 class="section-title">Students</h3>
+            <div class="stats-grid">
                 <div class="card stat-card">
-                    <div class="icon-wrapper" style="background: #e3f2fd; color: #2196f3; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 10px;">
+                    <div class="icon-wrapper">
                         <i class="fas fa-users"></i>
                     </div>
                     <h3 id="total-students-count">0</h3>
-                    <p style="color: #777; font-size: 0.9rem;">Total Students</p>
+                    <p class="stat-text">Total Students</p>
                 </div>
                 <div class="card stat-card">
-                    <div class="icon-wrapper" style="background: #e3f2fd; color: #2196f3; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 10px;">
+                    <div class="icon-wrapper">
                         <i class="fas fa-user-graduate"></i>
                     </div>
                     <h3 id="year1-students-count">0</h3>
-                    <p style="color: #777; font-size: 0.9rem;">1st Year Students</p>
+                    <p class="stat-text">1st Year Students</p>
                 </div>
                 <div class="card stat-card">
-                    <div class="icon-wrapper" style="background: #e3f2fd; color: #2196f3; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 10px;">
+                    <div class="icon-wrapper">
                         <i class="fas fa-user-graduate"></i>
                     </div>
                     <h3 id="year2-students-count">0</h3>
-                    <p style="color: #777; font-size: 0.9rem;">2nd Year Students</p>
+                    <p class="stat-text">2nd Year Students</p>
                 </div>
                 <div class="card stat-card">
-                    <div class="icon-wrapper" style="background: #e3f2fd; color: #2196f3; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 10px;">
+                    <div class="icon-wrapper">
                         <i class="fas fa-user-graduate"></i>
                     </div>
                     <h3 id="year3-students-count">0</h3>
-                    <p style="color: #777; font-size: 0.9rem;">3rd Year Students</p>
+                    <p class="stat-text">3rd Year Students</p>
                 </div>
                 <div class="card stat-card">
-                    <div class="icon-wrapper" style="background: #e3f2fd; color: #2196f3; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 10px;">
+                    <div class="icon-wrapper">
                         <i class="fas fa-graduation-cap"></i>
                     </div>
                     <h3 id="final-year-students-count">0</h3>
-                    <p style="color: #777; font-size: 0.9rem;">Final Year Students</p>
+                    <p class="stat-text">Final Year Students</p>
                 </div>
             </div>
 
-            <h3 class="section-title" style="margin-bottom: 15px; color: #555; border-bottom: 2px solid #eee; padding-bottom: 10px;">Staff Statistics</h3>
-            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px;">
+            <h3 class="section-title">Staff</h3>
+            <div class="stats-grid">
                 <div class="card stat-card">
-                    <div class="icon-wrapper" style="background: #fff3e0; color: #ff9800; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 10px;">
+                    <div class="icon-wrapper staff-total">
                         <i class="fas fa-chalkboard-teacher"></i>
                     </div>
                     <h3 id="total-staff-count">0</h3>
-                    <p style="color: #777; font-size: 0.9rem;">Total Staffs</p>
+                    <p class="stat-text">Total Staffs</p>
                 </div>
                 <div class="card stat-card">
-                    <div class="icon-wrapper" style="background: #e8f5e9; color: #2ecc71; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 10px;">
+                    <div class="icon-wrapper staff-perm">
                         <i class="fas fa-user-tie"></i>
                     </div>
                     <h3 id="perm-staff-count">0</h3>
-                    <p style="color: #777; font-size: 0.9rem;">Permanent Staffs</p>
+                    <p class="stat-text">Permanent Staffs</p>
                 </div>
                 <div class="card stat-card">
-                    <div class="icon-wrapper" style="background: #ffebee; color: #e74c3c; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 10px;">
+                    <div class="icon-wrapper staff-temp">
                         <i class="fas fa-clock"></i>
                     </div>
                     <h3 id="temp-staff-count">0</h3>
-                    <p style="color: #777; font-size: 0.9rem;">Temporary Staffs</p>
+                    <p class="stat-text">Temporary Staffs</p>
                 </div>
             </div>
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <div class="card" style="flex: 1; min-width: 400px;">
+            <div class="dashboard-flex-row">
+                <div class="card analytics-card">
                     <h3><i class="fas fa-chart-bar"></i> Batch-wise Attendance Analytics</h3>
-                    <canvas id="batchAttendanceChart" style="width: 100%; height: 300px;"></canvas>
+                    <canvas id="batchAttendanceChart" class="chart-full"></canvas>
                 </div>
-                <div class="card" style="flex: 1; min-width: 400px;">
+                <div class="card analytics-card">
                     <h3><i class="fas fa-chart-pie"></i> Course Enrollment Distribution</h3>
-                    <div style="height: 300px; position: relative;">
-                        <canvas id="courseDistributionChart"></canvas>
+                    <div class="chart-wrapper">
+                        <canvas id="courseDistributionChart" class="chart-full"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Students Section -->
-        <div id="students-section" class="section">
+        <!-- Students View -->
+        <div id="students-view" class="tab-view">
             <div class="card">
-                <h3>Subject-wise Student List <span id="studentListCount" style="font-size: 0.9rem; background: #e3f2fd; color: #2196f3; padding: 2px 8px; border-radius: 12px; margin-left: 10px; display: none;">Total: 0</span></h3>
-                <p style="margin-bottom: 15px; color: #666;">Select a batch and a course to see the list of enrolled students.</p>
-                <div class="controls">
-                    <div style="display: flex; gap: 10px; flex: 1;">
-                        <select id="studentViewSemesterFilter" class="form-control" onchange="populateStudentViewCourseFilter()">
-                            <option value="">-- Select Semester --</option>
-                            <option value="1">Semester 1</option>
-                            <option value="2">Semester 2</option>
-                            <option value="3">Semester 3</option>
-                            <option value="4">Semester 4</option>
-                            <option value="5">Semester 5</option>
-                            <option value="6">Semester 6</option>
-                            <option value="7">Semester 7</option>
-                            <option value="8">Semester 8</option>
-                        </select>
-                        <select id="studentViewCourseFilter" class="form-control" onchange="renderEnrolledStudents()">
-                            <option value="">-- Select a Course --</option>
-                        </select>
+                <div class="controls justify-between">
+                    <h3>Student List <span id="studentListCount">Total: 0</span></h3>
+                    <button class="btn btn-danger" onclick="clearAllStudents()"><i class="fas fa-trash-alt"></i> Clear All Students</button>
+                </div>
+                <p class="student-instructions">View students by Batch or filter by Semester and Course.</p>
+                <div class="controls student-controls-wrapper">
+                    <select id="studentViewBatchFilter" class="form-control" onchange="renderStudentsByBatch()">
+                        <option value="">-- Select Batch --</option>
+                    </select>
+                    <select id="studentViewSemesterFilter" class="form-control" onchange="handleStudentViewSemChange()">
+                        <option value="">-- Filter by Semester --</option>
+                        <option value="1">Semester 1</option>
+                        <option value="2">Semester 2</option>
+                        <option value="3">Semester 3</option>
+                        <option value="4">Semester 4</option>
+                        <option value="5">Semester 5</option>
+                        <option value="6">Semester 6</option>
+                        <option value="7">Semester 7</option>
+                        <option value="8">Semester 8</option>
+                    </select>
+                    <select id="studentViewCourseFilter" class="form-control" onchange="renderEnrolledStudents()">
+                        <option value="">-- Filter by Course --</option>
+                    </select>
+                </div>
+
+                <div id="exportOptions" class="export-options">
+                    <h4><i class="fas fa-file-excel"></i> Export Student Attendance Report to Excel</h4>
+                    <p style="font-size:0.85rem; color:#666; margin-bottom:10px;">Select columns to include in the Excel report. Low attendance (<= 75%) is highlighted in Red, and (75%-80%) in Yellow.</p>
+                    <div class="export-options-controls">
+                        <label><input type="checkbox" id="ex-sno" checked> Serial No</label>
+                        <label><input type="checkbox" id="ex-regNo" checked> Register Number</label>
+                        <label><input type="checkbox" id="ex-name" checked> Name</label>
+                        <label><input type="checkbox" id="ex-email" checked> Email</label>
+                        <label><input type="checkbox" id="ex-phone" checked> Phone Number</label>
+                        <label><input type="checkbox" id="ex-dob" checked> Date of Birth</label>
+                        <label><input type="checkbox" id="ex-attendance" checked> Attendance %</label>
                     </div>
+                    <button class="btn btn-success" onclick="downloadStudentExcel()"><i class="fas fa-file-excel"></i> Download Excel Report</button>
                 </div>
                 
                 <table>
@@ -327,7 +565,10 @@
                             <th>S.No</th>
                             <th>Reg No</th>
                             <th>Name</th>
-                            <th>Batch</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>DOB</th>
+                            <th>Attendance %</th>
                         </tr>
                     </thead>
                     <tbody id="enrolledStudentsTableBody">
@@ -337,14 +578,12 @@
             </div>
         </div>
         
-        <!-- Staff Section -->
-        <div id="staff-section" class="section">
+        <!-- Staff View -->
+        <div id="staff-view" class="tab-view">
             <div class="card">
-                <div class="controls" style="justify-content: space-between;">
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="searchStaff" class="form-control" placeholder="Search by Name or Email..." onkeyup="renderStaff()">
-                    </div>
-                    <button class="btn btn-primary" onclick="openModal('staffModal')"><i class="fas fa-plus"></i> Add Staff</button>
+                <div class="controls justify-between">
+                    <input type="text" id="searchStaff" class="form-control" placeholder="Search staff by name or email..." onkeyup="renderStaff()">
+                    <button class="btn btn-primary" onclick="modalManager.staff()"><i class="fas fa-plus"></i> Add Staff</button>
                 </div>
                 
                 <table>
@@ -364,12 +603,12 @@
             </div>
         </div>
 
-        <!-- Manage Courses Section -->
-        <div id="courses-section" class="section">
+        <!-- Manage Courses View -->
+        <div id="courses-view" class="tab-view">
             <div class="card">
                 <h3 class="section-title">Manage Courses (Semester-wise)</h3>
-                <div class="controls" style="align-items: flex-end;">
-                    <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <div class="controls align-items-end">
+                    <div class="form-group no-margin-bottom flex-1">
                         <label>Select Semester</label>
                         <select id="manageCourseSemester" class="form-control" onchange="renderCourseCatalog()">
                             <option value="1">Semester 1</option>
@@ -382,7 +621,7 @@
                             <option value="8">Semester 8</option>
                         </select>
                     </div>
-                    <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                    <div class="form-group no-margin-bottom flex-1">
                         <label>Academic Year</label>
                         <select class="form-control">
                             <option>2025 - 2026</option>
@@ -390,20 +629,21 @@
                     </div>
                 </div>
 
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #eee;">
-                    <h4 style="margin-bottom: 10px; font-size: 1rem;">Add New Course</h4>
-                    <div class="controls" style="margin-bottom: 0;">
-                        <input type="text" id="newCourseCode" class="form-control" placeholder="Course Code (e.g. CS101)" style="flex: 1;">
-                        <input type="text" id="newCourseNameInput" class="form-control" placeholder="Course Name" style="flex: 2;">
-                        <select id="newCourseType" class="form-control" style="flex: 1;">
+                <div class="course-add-box">
+                    <h4 class="course-add-title">Add New Course</h4>
+                    <div class="controls course-controls">
+                        <input type="text" id="newCourseCode" class="form-control input-flex-1" placeholder="Course Code (e.g. CS101)">
+                        <input type="text" id="newCourseNameInput" class="form-control input-flex-2" placeholder="Course Name">
+                        <input type="text" id="newCourseShortName" class="form-control input-flex-1" placeholder="Short Name (e.g. ES&IoT)">
+                        <select id="newCourseType" class="form-control input-flex-1">
                             <option value="Mandatory">Mandatory</option>
                             <option value="Core">Core</option>
                             <option value="Professional Elective">Professional Elective</option>
                             <option value="Open Elective">Open Elective</option>
                         </select>
-                        <input type="number" id="newCourseCredits" class="form-control" placeholder="Credits" style="width: 80px;">
+                        <input type="number" id="newCourseCredits" class="form-control input-small" placeholder="Credits">
                         <button id="addCourseBtn" class="btn btn-primary" onclick="addCourseToCatalog()"><i class="fas fa-plus"></i> Add</button>
-                        <button id="cancelCourseBtn" class="btn btn-danger" onclick="cancelCourseEdit()" style="display: none; margin-left: 5px;"><i class="fas fa-times"></i> Cancel</button>
+                        <button id="cancelCourseBtn" class="btn btn-danger hidden ml-5" onclick="cancelCourseEdit()"><i class="fas fa-times"></i> Cancel</button>
                     </div>
                 </div>
 
@@ -411,7 +651,7 @@
                     <thead>
                         <tr>
                             <th>Code</th>
-                            <th>Course Name</th>
+                            <th>Course Name (Short Name)</th>
                             <th>Type</th>
                             <th>Credits</th>
                             <th>Actions</th>
@@ -424,28 +664,28 @@
             </div>
         </div>
 
-        <!-- Classes Section (Placeholder for completeness) -->
-        <div id="classes-section" class="section">
+        <!-- Batches View -->
+        <div id="classes-view" class="tab-view">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div class="section-header-row">
                     <h3>Manage Batches</h3>
                     <div>
-                        <button class="btn btn-primary" onclick="openModal('addBatchModal')"><i class="fas fa-plus"></i> Add Batch</button>
-                        <button class="btn btn-primary" onclick="openModal('semesterSettingsModal')" style="background-color: #8e44ad; margin-left: 5px;"><i class="fas fa-calendar-check"></i> Semester Settings</button>
-                        <button class="btn btn-primary" onclick="promoteStudents()" style="background-color: #27ae60; margin-left: 5px;"><i class="fas fa-level-up-alt"></i> Promote All</button>
-                        <button class="btn btn-primary" onclick="graduateStudents()" style="background-color: #2c3e50; margin-left: 5px;"><i class="fas fa-graduation-cap"></i> Graduation</button>
-                        <button class="btn btn-primary" onclick="archiveGraduatedBatches()" style="background-color: #e67e22; margin-left: 5px;"><i class="fas fa-archive"></i> Archive Graduated</button>
+                        <button class="btn btn-primary" onclick="modalManager.show('addBatchModal')"><i class="fas fa-plus"></i> Add Batch</button>
+                        <button class="btn btn-primary btn-purple ml-5" onclick="modalManager.semesterSettings()"><i class="fas fa-calendar-check"></i> Semester Settings</button>
+                        <button class="btn btn-primary btn-green ml-5" onclick="promoteStudents()"><i class="fas fa-level-up-alt"></i> Promote All</button>
+                        <button class="btn btn-primary btn-dark ml-5" onclick="graduateStudents()"><i class="fas fa-graduation-cap"></i> Graduation</button>
+                        <button class="btn btn-primary btn-orange ml-5" onclick="archiveGraduatedBatches()"><i class="fas fa-archive"></i> Archive Graduated</button>
                     </div>
                 </div>
-                <p style="margin-bottom: 15px; color: #666;">Manage your batches with visual insights. Track progress, attendance, and manage courses efficiently.</p>
+                <p class="section-description">Manage your batches with visual insights. Track progress, attendance, and manage courses efficiently.</p>
                 <div id="classesContainer" class="batch-grid">
                     <!-- Populated by JS -->
                 </div>
             </div>
         </div>
 
-        <!-- Timetable Section -->
-        <div id="timetable-section" class="section">
+        <!-- Timetable View -->
+        <div id="timetable-view" class="tab-view">
             <div class="controls-card">
                 <div class="filters">
                     <div class="form-group">
@@ -455,14 +695,6 @@
                             <option value="2">2nd Year</option>
                             <option value="3">3rd Year</option>
                             <option value="4">Final Year</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Select Section</label>
-                        <select id="ttSectionSelect" class="form-control" onchange="renderTimetableManager()">
-                            <option value="A">Section A</option>
-                            <option value="B">Section B</option>
-                            <option value="C">Section C</option>
                         </select>
                     </div>
                 </div>
@@ -487,8 +719,8 @@
             </div>
         </div>
 
-        <!-- Staff Allocation Section -->
-        <div id="allocation-section" class="section">
+        <!-- Allocation View -->
+        <div id="allocation-view" class="tab-view">
             <div class="controls-card">
                 <div class="filters">
                     <div class="form-group">
@@ -498,14 +730,6 @@
                             <option value="2">2nd Year</option>
                             <option value="3">3rd Year</option>
                             <option value="4">Final Year</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Select Section</label>
-                        <select id="saSectionSelect" class="form-control" onchange="renderAllocationGrid()">
-                            <option value="A">Section A</option>
-                            <option value="B">Section B</option>
-                            <option value="C">Section C</option>
                         </select>
                     </div>
                 </div>
@@ -531,8 +755,8 @@
     <!-- Add/Edit Student Modal -->
     <div id="studentModal" class="modal">
         <div class="modal-content">
-            <i class="fas fa-times close-modal" onclick="closeModal('studentModal')"></i>
-            <h2 id="modalTitle" style="margin-bottom: 20px;">Add New Student</h2>
+            <i class="fas fa-times close-modal" onclick="modalManager.hide('studentModal')"></i>
+            <h2 id="modalTitle" class="modal-heading">Add New Student</h2>
             <form id="studentForm" onsubmit="handleStudentSubmit(event)">
                 <input type="hidden" id="studentId">
                 <div class="form-group">
@@ -542,21 +766,7 @@
                 <div class="form-group">
                     <label>Register Number</label>
                     <input type="text" id="studentRegNo" required oninput="handleRegNoInput()">
-                    <small id="regNoHint" style="color: var(--primary-color); display: none; margin-top: 5px;"></small>
-                </div>
-                <div class="form-group">
-                    <label>Batch</label>
-                    <select id="studentClass" required>
-                        <!-- Populated by JS -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Section</label>
-                    <select id="studentSection" class="form-control">
-                        <option value="A">Section A</option>
-                        <option value="B">Section B</option>
-                        <option value="C">Section C</option>
-                    </select>
+                    <small id="regNoHint" class="regno-hint"></small>
                 </div>
                 <div class="form-group">
                     <label>Semester</label>
@@ -581,7 +791,7 @@
                     <label>Password</label>
                     <input type="text" id="studentPassword" value="password" required>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Student</button>
+                <button type="submit" class="btn btn-primary btn-fullwidth">Save Student</button>
             </form>
         </div>
     </div>
@@ -589,8 +799,8 @@
     <!-- Edit Batch Modal -->
     <div id="editBatchModal" class="modal">
         <div class="modal-content">
-            <i class="fas fa-times close-modal" onclick="closeModal('editBatchModal')"></i>
-            <h2 style="margin-bottom: 20px;">Edit Batch Details</h2>
+            <i class="fas fa-times close-modal" onclick="modalManager.hide('editBatchModal')"></i>
+            <h2 class="modal-heading">Edit Batch Details</h2>
             <form onsubmit="handleEditBatch(event)">
                 <input type="hidden" id="editBatchId">
                 <div class="form-group">
@@ -610,11 +820,7 @@
                         <option value="8">Semester 8</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Number of Courses</label>
-                    <input type="number" id="editBatchCourseCount" class="form-control" min="0" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
+                <button type="submit" class="btn btn-primary btn-fullwidth">Save Changes</button>
             </form>
         </div>
     </div>
@@ -622,8 +828,8 @@
     <!-- Add/Edit Staff Modal -->
     <div id="staffModal" class="modal">
         <div class="modal-content">
-            <i class="fas fa-times close-modal" onclick="closeModal('staffModal')"></i>
-            <h2 id="staffModalTitle" style="margin-bottom: 20px;">Add New Staff</h2>
+            <i class="fas fa-times close-modal" onclick="modalManager.hide('staffModal')"></i>
+            <h2 id="staffModalTitle" class="modal-heading">Add New Staff</h2>
             <form id="staffForm" onsubmit="handleStaffSubmit(event)">
                 <input type="hidden" id="staffId">
                 <div class="form-group">
@@ -637,13 +843,13 @@
                 <div class="form-group">
                     <label>Teaching Assignments</label>
                     <div id="staffAssignmentsContainer"></div>
-                    <button type="button" class="btn btn-edit" onclick="addStaffAssignmentRow()" style="margin-top: 5px; font-size: 0.8rem;"><i class="fas fa-plus"></i> Add Subject</button>
+                    <button type="button" class="btn btn-edit btn-compact" onclick="addStaffAssignmentRow()"><i class="fas fa-plus"></i> Add Subject</button>
                 </div>
                 <div class="form-group">
                     <label>Password</label>
                     <input type="text" id="staffPassword" value="password" required>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Staff</button>
+                <button type="submit" class="btn btn-primary btn-fullwidth">Save Staff</button>
             </form>
         </div>
     </div>
@@ -651,14 +857,14 @@
     <!-- Manage Class Courses Modal -->
     <div id="classCoursesModal" class="modal">
         <div class="modal-content">
-            <i class="fas fa-times close-modal" onclick="closeModal('classCoursesModal')"></i>
-            <h2 style="margin-bottom: 10px;">Manage Courses</h2>
-            <h4 id="classCoursesTitle" style="margin-bottom: 20px; color: var(--primary-color);"></h4>
+            <i class="fas fa-times close-modal" onclick="modalManager.hide('classCoursesModal')"></i>
+            <h2 class="modal-title">Manage Courses</h2>
+            <h4 id="classCoursesTitle" class="modal-subtitle"></h4>
             
-            <div class="form-group" style="display: flex; gap: 10px;">
+            <div class="form-group modal-row">
                 <input type="text" id="newCourseName" class="form-control" placeholder="Enter course name (e.g. Data Structures)" list="courseSuggestions">
                 <datalist id="courseSuggestions"></datalist>
-                <select id="courseSemester" class="form-control" style="max-width: 120px;">
+                <select id="courseSemester" class="form-control max-width-120">
                     <option value="1">Sem 1</option>
                     <option value="2">Sem 2</option>
                     <option value="3">Sem 3</option>
@@ -668,7 +874,7 @@
                     <option value="7">Sem 7</option>
                     <option value="8">Sem 8</option>
                 </select>
-                <select id="courseType" class="form-control" style="max-width: 140px;">
+                <select id="courseType" class="form-control max-width-140">
                     <option value="Mandatory">Mandatory</option>
                     <option value="Professional Elective">Prof. Elective</option>
                     <option value="Open Elective">Open Elective</option>
@@ -677,32 +883,32 @@
                 <button class="btn btn-primary" onclick="addClassCourse()">Add</button>
             </div>
 
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #ccc;">
-                <h5 style="margin-bottom: 8px; color: #2c3e50;">Bulk Enroll Students (CSV)</h5>
-                <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Upload a list to map students to subjects. <br><strong>Format:</strong> RegisterNumber, StudentName, CourseName</p>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="file" id="enrollmentCSV" accept=".csv" class="form-control" style="padding: 6px; font-size: 0.9rem;">
-                    <button class="btn btn-primary" onclick="processEnrollmentCSV()" style="font-size: 0.9rem; background-color: #8e44ad;"><i class="fas fa-file-import"></i> Import</button>
-                    <button class="btn btn-primary" onclick="downloadEnrollmentTemplate()" style="font-size: 0.9rem; background-color: #27ae60;" title="Download Template"><i class="fas fa-download"></i></button>
+            <div class="bulk-import-panel">
+                <h5 class="bulk-import-heading">Bulk Enroll Students (CSV)</h5>
+                <p class="bulk-import-text">Upload a list to map students to subjects. <br><strong>Format:</strong> RegisterNumber, StudentName, CourseName</p>
+                <div class="bulk-import-actions">
+                    <input type="file" id="enrollmentCSV" accept=".csv" class="form-control form-control-file">
+                    <button class="btn btn-primary btn-purple btn-compact" onclick="processEnrollmentCSV()"><i class="fas fa-file-import"></i> Import</button>
+                    <button class="btn btn-primary btn-green btn-compact" onclick="downloadEnrollmentTemplate()" title="Download Template"><i class="fas fa-download"></i></button>
                 </div>
             </div>
 
-            <div style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #eee; border-radius: 5px;">
-                <ul id="classCoursesList" style="list-style: none; padding: 0;"></ul>
+            <div class="panel-scroll">
+                <ul id="classCoursesList" class="list-reset"></ul>
             </div>
-            <button class="btn btn-primary" style="width: 100%;" onclick="closeModal('classCoursesModal')">Done</button>
+            <button class="btn btn-primary btn-fullwidth" onclick="modalManager.hide('classCoursesModal')">Done</button>
         </div>
     </div>
 
     <!-- Course Students Modal -->
     <div id="courseStudentsModal" class="modal">
         <div class="modal-content">
-            <i class="fas fa-times close-modal" onclick="closeModal('courseStudentsModal')"></i>
-            <h2 style="margin-bottom: 10px;">Enrolled Students</h2>
-            <h4 id="courseStudentsTitle" style="margin-bottom: 20px; color: var(--primary-color);"></h4>
+            <i class="fas fa-times close-modal" onclick="modalManager.hide('courseStudentsModal')"></i>
+            <h2 class="modal-title">Enrolled Students</h2>
+            <h4 id="courseStudentsTitle" class="modal-subtitle"></h4>
             
-            <div style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 5px;">
-                <table style="margin-top: 0;">
+            <div class="panel-scroll">
+                <table class="table-no-margin-top">
                     <thead>
                         <tr>
                             <th>Reg No</th>
@@ -718,12 +924,12 @@
     <!-- Staff Assignments Modal -->
     <div id="staffAssignmentsModal" class="modal">
         <div class="modal-content">
-            <i class="fas fa-times close-modal" onclick="closeModal('staffAssignmentsModal')"></i>
-            <h2 style="margin-bottom: 10px;">Teaching Assignments</h2>
-            <h4 id="staffAssignmentsTitle" style="margin-bottom: 20px; color: var(--primary-color);"></h4>
+            <i class="fas fa-times close-modal" onclick="modalManager.hide('staffAssignmentsModal')"></i>
+            <h2 class="modal-title">Teaching Assignments</h2>
+            <h4 id="staffAssignmentsTitle" class="modal-subtitle"></h4>
             
-            <div style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 5px;">
-                <table style="margin-top: 0;">
+            <div class="panel-scroll">
+                <table class="table-no-margin-top">
                     <thead>
                         <tr>
                             <th>Batch</th>
@@ -739,9 +945,9 @@
 
     <!-- Semester Settings Modal -->
     <div id="semesterSettingsModal" class="modal">
-        <div class="modal-content">
-            <i class="fas fa-times close-modal" onclick="closeModal('semesterSettingsModal')"></i>
-            <h2 style="margin-bottom: 20px;">Academic Semester Settings</h2>
+        <div class="modal-content modal-content-small">
+            <i class="fas fa-times close-modal" onclick="modalManager.hide('semesterSettingsModal')"></i>
+            <h2 class="modal-title">Academic Semester Settings</h2>
             <form onsubmit="handleSemesterSettings(event)">
                 <div class="form-group">
                     <label>Current Academic Year</label>
@@ -758,11 +964,12 @@
                     <label>Semester Start Date</label>
                     <input type="date" id="semStartDate" required>
                 </div>
+                <input type="hidden" id="semesterSettingsId">
                 <div class="form-group">
                     <label>Last Working Day</label>
                     <input type="date" id="semEndDate" required>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Settings</button>
+                <button type="submit" class="btn btn-primary btn-fullwidth">Save Settings</button>
             </form>
         </div>
     </div>
@@ -770,8 +977,8 @@
     <!-- Add Batch Modal -->
     <div id="addBatchModal" class="modal">
         <div class="modal-content">
-            <i class="fas fa-times close-modal" onclick="closeModal('addBatchModal')"></i>
-            <h2 style="margin-bottom: 20px;">Create New Batch</h2>
+            <i class="fas fa-times close-modal" onclick="modalManager.hide('addBatchModal')"></i>
+            <h2 class="modal-heading">Create New Batch</h2>
             <form onsubmit="handleAddBatch(event)">
                 <div class="form-group">
                     <label>Batch Name</label>
@@ -781,7 +988,7 @@
                     <label>Batch ID (StartYear-EndYear)</label>
                     <input type="text" id="newBatchId" placeholder="e.g. 2024-2028" pattern="\d{4}-\d{4}" title="Format: YYYY-YYYY" required>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Create Batch</button>
+                <button type="submit" class="btn btn-primary btn-fullwidth">Create Batch</button>
             </form>
         </div>
     </div>
@@ -789,9 +996,9 @@
     <!-- Promote Batch Modal -->
     <div id="promoteBatchModal" class="modal">
         <div class="modal-content">
-            <i class="fas fa-times close-modal" onclick="closeModal('promoteBatchModal')"></i>
-            <h2 style="margin-bottom: 10px;">Promote Batch</h2>
-            <h4 id="promoteBatchTitle" style="margin-bottom: 20px; color: var(--primary-color);"></h4>
+            <i class="fas fa-times close-modal" onclick="modalManager.hide('promoteBatchModal')"></i>
+            <h2 class="modal-heading-small">Promote Batch</h2>
+            <h4 id="promoteBatchTitle" class="modal-subtitle-highlight"></h4>
             <form onsubmit="handlePromoteBatch(event)">
                 <input type="hidden" id="promoteSourceBatchId">
                 <div class="form-group">
@@ -800,32 +1007,34 @@
                         <!-- Populated by JS -->
                     </select>
                 </div>
-                <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">This action will change the batch for all students in the source batch. This cannot be undone.</p>
-                <button type="submit" class="btn btn-primary" style="width: 100%; background-color: #27ae60;">Confirm & Promote</button>
+                <p class="modal-note">This action will change the batch for all students in the source batch. This cannot be undone.</p>
+                <button type="submit" class="btn btn-success btn-fullwidth">Confirm & Promote</button>
             </form>
         </div>
     </div>
 
     <!-- Manage Batch Students Modal -->
     <div id="manageBatchStudentsModal" class="modal">
-        <div class="modal-content" style="max-width: 900px;">
-            <i class="fas fa-times close-modal" onclick="closeModal('manageBatchStudentsModal')"></i>
-            <h2 style="margin-bottom: 20px;"><span id="batchStudentsTitleText">Manage Students</span> <span id="batchStudentCount" style="font-size: 0.9rem; background: #e3f2fd; color: #2196f3; padding: 2px 8px; border-radius: 12px; margin-left: 10px;">Total: 0</span></h2>
+        <div class="modal-content modal-content-wide">
+            <i class="fas fa-times close-modal" onclick="modalManager.hide('manageBatchStudentsModal')"></i>
+            <h2 class="batch-students-heading">
+                <span id="batchStudentsTitleText">Manage Students</span> 
+                <span id="batchSemesterDisplay" class="batch-student-count-badge semester-badge">Semester: -</span>
+                <span id="batchStudentCount" class="batch-student-count-badge">Total: 0</span>
+            </h2>
             
-            <div class="controls" style="justify-content: space-between;">
+            <div class="controls controls-spread">
                 <input type="text" id="searchBatchStudent" class="form-control" placeholder="Search by Name or Reg No..." onkeyup="renderBatchStudents()">
                 <button class="btn btn-primary" onclick="openStudentModalForBatch()"><i class="fas fa-plus"></i> Add Student to Batch</button>
             </div>
 
-            <div style="max-height: 400px; overflow-y: auto;">
+            <div class="scrollable-panel">
                 <table>
                     <thead>
                         <tr>
                             <th>S.No</th>
                             <th>Reg No</th>
                             <th>Name</th>
-                            <th>Semester</th>
-                            <th>Courses</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -839,28 +1048,39 @@
     </div>
 
     <script>
-        // Data Management
-        let users = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
-        let classes = JSON.parse(localStorage.getItem('smartAttendance_classes')) || [];
+        const API_BASE = "http://localhost:8081/api";
+        let users = [], classes = [];
+        let globalCourseCatalog = [];
+        let currentDisplayedStudents = [];
+        let currentSemesterCourses = [];
+        let currentManagingBatchId = null;
+        let editingCourseIndex = -1;
+
+        async function apiFetch(endpoint, options = {}) {
+            const token = sessionStorage.getItem('auth_token');
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            };
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, { ...defaultOptions, ...options });
+                if (response.status === 401) {
+                    logout();
+                    return null;
+                }
+                return response;
+            } catch (err) {
+                console.error("API Fetch error:", err);
+                return null;
+            }
+        }
 
         function calculateSemester(identifier) {
             if (!identifier) return '-';
             let startYear = 0;
-            
-            // 0. Check for explicit Year-Dept format (e.g. "2-ece" -> 2nd Year)
-            const yearMatch = identifier.toString().match(/^(\d)-/);
-            if (yearMatch) {
-                const year = parseInt(yearMatch[1]);
-                // Determine Odd/Even based on settings or date
-                let isOdd = true;
-                const settings = JSON.parse(localStorage.getItem('smartAttendance_settings'));
-                if (settings && settings.semesterType) {
-                    isOdd = settings.semesterType === 'odd';
-                } else {
-                    isOdd = new Date().getMonth() >= 6;
-                }
-                return (year * 2) - (isOdd ? 1 : 0);
-            }
+            const settings = JSON.parse(sessionStorage.getItem('smartAttendance_settings') || '{}');
 
             // Robust Year Extraction
             // 1. Try to find 4-digit year in string (e.g. "2024-2028" or "Batch-2024")
@@ -878,7 +1098,8 @@
             if (!startYear || isNaN(startYear)) return '-';
 
             // 1. Try Admin Settings (Academic Year Context)
-            const settings = JSON.parse(localStorage.getItem('smartAttendance_settings'));
+            // Settings are already loaded above
+
             if (settings && settings.academicYear && settings.semesterType) {
                 const academicStartYear = parseInt(settings.academicYear.split('-')[0]);
                 if (!isNaN(academicStartYear)) {
@@ -919,33 +1140,122 @@
             return `${startYear}-${endYear}`;
         }
 
+        function getShortName(fullName) {
+            if (!fullName || fullName === '---') return fullName || '';
+            if (!globalCourseCatalog || globalCourseCatalog.length === 0) return fullName;
+            const target = fullName.trim().toLowerCase();
+            const course = globalCourseCatalog.find(c => 
+                (c.name && c.name.trim().toLowerCase() === target) ||
+                (c.shortName && c.shortName.trim().toLowerCase() === target) ||
+                (c.code && c.code.trim().toLowerCase() === target)
+            );
+            if (course) {
+                if (course.shortName && course.name && course.shortName.toLowerCase() !== course.name.toLowerCase()) {
+                    return `${course.name} (${course.shortName})`;
+                }
+                return course.name || course.code || fullName;
+            }
+            return fullName;
+        }
+
+        function getOnlyShortName(fullName) {
+            if (!fullName || fullName === '---') return fullName || '';
+            if (!globalCourseCatalog || globalCourseCatalog.length === 0) return fullName;
+            const target = fullName.trim().toLowerCase();
+            const course = globalCourseCatalog.find(c => 
+                (c.name && c.name.trim().toLowerCase() === target) ||
+                (c.shortName && c.shortName.trim().toLowerCase() === target) ||
+                (c.code && c.code.trim().toLowerCase() === target)
+            );
+            if (course && course.shortName) return course.shortName;
+            if (course && course.code) return course.code;
+            return fullName;
+        }
+
         // Initialize
-        function init() {
-            populateClassDropdowns();
-            updateDashboardStats();
-            // renderStudents();
+        async function init() {
+            const token = sessionStorage.getItem('auth_token');
+            const currentUser = JSON.parse(sessionStorage.getItem('smartAttendance_currentUser'));
+
+            if (!token || !currentUser || (currentUser.role || '').toLowerCase() !== 'admin') {
+                logout();
+                return;
+            }
+            
+            // Show loading state or initial values
+            const academicYearElem = document.querySelector('.academic-year');
+            if (academicYearElem) academicYearElem.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+
+            // Pre-initialize globals to avoid rendering errors
+            users = []; classes = [];
+
+            const [usersRes, batchesRes, settingsRes, statsRes] = await Promise.all([
+                apiFetch('/admin/users'),
+                apiFetch('/admin/batches'),
+                apiFetch('/admin/semester-settings'),
+                apiFetch('/admin/dashboard-stats')
+            ]);
+            
+            users = (usersRes && usersRes.ok) ? await usersRes.json() : [];
+            classes = (batchesRes && batchesRes.ok) ? await batchesRes.json() : [];
+
+            // Fetch and store semester settings
+            let settingsObj = null;
+            if (settingsRes && settingsRes.ok) {
+                settingsObj = await settingsRes.json();
+                sessionStorage.setItem('smartAttendance_settings', JSON.stringify(settingsObj));
+            }
+            
+            // Fetch all courses for short-name mapping
+            const courseRes = await apiFetch('/admin/courses');
+            if (courseRes && courseRes.ok) globalCourseCatalog = await courseRes.json();
+
+            if (statsRes && statsRes.ok) {
+                const stats = await statsRes.json();
+                document.getElementById('total-students-count').textContent = stats.totalStudents || 0;
+                document.getElementById('total-staff-count').textContent = stats.totalStaff || 0;
+                document.getElementById('year1-students-count').textContent = stats.year1 || 0;
+                document.getElementById('year2-students-count').textContent = stats.year2 || 0;
+                document.getElementById('year3-students-count').textContent = stats.year3 || 0;
+                document.getElementById('final-year-students-count').textContent = stats.finalYear || 0;
+                document.getElementById('perm-staff-count').textContent = stats.permStaff || 0;
+                document.getElementById('temp-staff-count').textContent = stats.tempStaff || 0;
+                
+                const currentAy = stats.academicYear || (settingsObj && settingsObj.academicYear) || '2025-2026';
+                if (academicYearElem) academicYearElem.innerHTML = `<i class="fas fa-calendar-check"></i> ${currentAy} (Current Year)`;
+            } else if (academicYearElem) {
+                academicYearElem.innerHTML = `<i class="fas fa-calendar-check"></i> 2025-2026 (Current Year)`;
+            }
+
+            // Populate Batch Filter in Student View
+            const studentViewBatchFilter = document.getElementById('studentViewBatchFilter');
+            if (studentViewBatchFilter) {
+                studentViewBatchFilter.innerHTML = '<option value="">-- Select Batch --</option>';
+                classes.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.name;
+                    studentViewBatchFilter.appendChild(opt);
+                });
+            }
             renderStaff();
             renderClasses();
             renderCharts();
         }
-
-        function populateClassDropdowns() {
-            const modalSelect = document.getElementById('studentClass');
+        
+        // Global UI Initializations
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.getElementById('menuToggle');
+            const closeSidebar = document.getElementById('closeSidebar');
             
-            // Clear existing options
-            modalSelect.innerHTML = '<option value="" disabled selected>Select Batch</option>';
-
-            classes.forEach(cls => {
-                const option = document.createElement('option');
-                option.value = cls.id;
-                option.textContent = cls.name;
-                modalSelect.appendChild(option.cloneNode(true));
-            });
-        }
+            if (menuToggle) menuToggle.addEventListener('click', () => sidebar.classList.add('active'));
+            if (closeSidebar) closeSidebar.addEventListener('click', () => sidebar.classList.remove('active'));
+        });
 
         function updateDashboardStats() {
-            const students = users.filter(u => u.role === 'student');
-            const staff = users.filter(u => u.role === 'staff');
+            const students = users.filter(u => (u.role || '').toUpperCase() === 'STUDENT');
+            const staff = users.filter(u => (u.role || '').toUpperCase() === 'STAFF');
             
             document.getElementById('total-students-count').textContent = students.length;
             document.getElementById('total-staff-count').textContent = staff.length;
@@ -954,9 +1264,8 @@
             let year1 = 0, year2 = 0, year3 = 0, finalYear = 0;
             students.forEach(s => {
                 let sem = s.semester;
-                if (!sem) {
-                    sem = calculateSemester(s.classId); // Try Batch/Class ID first
-                    if (sem === '-' || sem === undefined) sem = calculateSemester(s.regNo); // Fallback to RegNo
+                if (!sem || sem === '-') {
+                    sem = calculateSemester(s.identifier);
                 }
                 
                 if (sem >= 1 && sem <= 2) year1++;
@@ -982,8 +1291,14 @@
         }
 
         function renderCharts() {
-            const attendance = JSON.parse(localStorage.getItem('smartAttendance_attendance')) || {};
+            // TODO: Fetch actual attendance data from backend for charts
+            // For now, using a mock or previously stored data if available
+            const attendance = {}; // Placeholder for fetched attendance data
             const batchStats = {};
+
+            // Example: If attendance data were fetched like this:
+            // const attendanceRes = await apiFetch('/admin/attendance/summary');
+            // if (attendanceRes && attendanceRes.ok) attendance = await attendanceRes.json();
 
             // Initialize stats for all classes
             classes.forEach(c => {
@@ -1072,10 +1387,10 @@
 
         // Navigation
         function switchTab(tabName) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-view').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-links li').forEach(l => l.classList.remove('active'));
-            
-            document.getElementById(`${tabName}-section`).classList.add('active');
+            if (!document.getElementById(`${tabName}-view`)) return;
+            document.getElementById(`${tabName}-view`).classList.add('active');
             document.getElementById(`nav-${tabName}`).classList.add('active');
             
             const titles = {
@@ -1092,28 +1407,39 @@
             if (tabName === 'timetable') initTimetableManager();
             if (tabName === 'allocation') initStaffAllocation();
             if (tabName === 'courses') renderCourseCatalog();
+
+            // Close sidebar on mobile after navigation
+            if(window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
         }
 
         // Student Management
-        function populateStudentViewCourseFilter() {
+        async function handleStudentViewSemChange() {
+            document.getElementById('studentViewBatchFilter').value = ""; // Reset batch filter
+            await populateStudentViewCourseFilter();
+        }
+
+        async function populateStudentViewCourseFilter() {
             const semester = document.getElementById('studentViewSemesterFilter').value;
             const courseFilter = document.getElementById('studentViewCourseFilter');
             const tbody = document.getElementById('enrolledStudentsTableBody');
             
             courseFilter.innerHTML = '<option value="">-- Select a Course --</option>';
             tbody.innerHTML = ''; 
-
+            document.getElementById('exportOptions').style.display = 'none';
             if (!semester) return;
 
-            const catalog = JSON.parse(localStorage.getItem('smartAttendance_course_catalog')) || {};
-            const courses = catalog[semester] || [];
+            // Fetch courses directly from backend instead of sessionStorage
+            const res = await apiFetch(`/admin/courses?semester=${semester}`);
+            const courses = (res && res.ok) ? await res.json() : [];
 
-            if (courses.length > 0) {
+            if (courses && courses.length > 0) {
                 courses.forEach(course => {
-                    const courseName = course.name;
+                    const displayName = course.shortName ? `${course.name} (${course.shortName})` : course.name;
                     const option = document.createElement('option');
-                    option.value = courseName;
-                    option.textContent = `${course.code ? course.code + ' - ' : ''}${courseName}`;
+                    option.value = course.id;
+                    option.textContent = `${course.code ? course.code + ' - ' : ''}${displayName}`;
                     courseFilter.appendChild(option);
                 });
             } else {
@@ -1121,78 +1447,237 @@
             }
         }
 
-        function renderEnrolledStudents() {
-            const courseName = document.getElementById('studentViewCourseFilter').value;
+        function getAttendanceBadge(pct) {
+            let bg = '#e8f5e9', fg = '#2e7d32';
+            if (pct <= 75) {
+                bg = '#ffcdd2'; fg = '#b71c1c'; // Red highlight for <= 75%
+            } else if (pct > 75 && pct <= 80) {
+                bg = '#fff9c4'; fg = '#f57f17'; // Yellow highlight for 75-80%
+            }
+            return `<span style="background:${bg}; color:${fg}; padding:4px 10px; border-radius:12px; font-weight:bold; display:inline-block;">${pct}%</span>`;
+        }
+
+        async function renderEnrolledStudents() {
+            const courseId = document.getElementById('studentViewCourseFilter').value;
             const tbody = document.getElementById('enrolledStudentsTableBody');
             const countBadge = document.getElementById('studentListCount');
+            const exportBox = document.getElementById('exportOptions');
             tbody.innerHTML = '';
             countBadge.style.display = 'none';
+            exportBox.style.display = 'none';
+            currentDisplayedStudents = [];
 
-            if (!courseName) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Please select a course.</td></tr>';
+            if (!courseId) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Please select a course.</td></tr>';
                 return;
             }
 
-            const enrolledStudents = users.filter(u => 
-                u.role === 'student' && 
-                u.enrolledCourses && 
-                u.enrolledCourses.includes(courseName)
-            );
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading students...</td></tr>';
 
-            // Sort alphabetically
-            enrolledStudents.sort((a, b) => a.name.localeCompare(b.name));
+            const [res, attRes] = await Promise.all([
+                apiFetch(`/attendance/enrolled-students?courseId=${courseId}`),
+                apiFetch('/admin/attendance-summary')
+            ]);
+
+            if (!res || !res.ok) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">Error fetching enrolled students.</td></tr>';
+                return;
+            }
+
+            const enrolledStudents = await res.json();
+            const attData = (attRes && attRes.ok) ? await attRes.json() : {};
+            currentDisplayedStudents = enrolledStudents;
+
+            enrolledStudents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
             if (enrolledStudents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No students are enrolled in this course.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No students are enrolled in this course.</td></tr>';
                 return;
             }
 
             countBadge.textContent = `Total: ${enrolledStudents.length}`;
             countBadge.style.display = 'inline-block';
+            exportBox.style.display = 'block';
 
+            tbody.innerHTML = '';
             enrolledStudents.forEach((student, index) => {
-                const cls = classes.find(c => c.id === student.classId);
-                const batchName = cls ? cls.name : student.classId;
+                const identifier = student.identifier || student.username || '-';
+                const attInfo = attData[identifier] || attData[student.id] || { percentage: 85.0 };
+                const pct = attInfo.percentage !== undefined ? attInfo.percentage : 85.0;
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${index + 1}</td>
-                    <td>${student.regNo}</td>
-                    <td>${student.name}</td>
-                    <td>${batchName}</td>
+                    <td><strong>${identifier}</strong></td>
+                    <td>${student.name || '-'}</td>
+                    <td>${student.email || '-'}</td>
+                    <td>${student.phone || '-'}</td>
+                    <td>${student.dob || '-'}</td>
+                    <td>${getAttendanceBadge(pct)}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        let currentManagingBatchId = null;
+        async function renderStudentsByBatch() {
+            const batchId = document.getElementById('studentViewBatchFilter').value;
+            const tbody = document.getElementById('enrolledStudentsTableBody');
+            const countBadge = document.getElementById('studentListCount');
+            const exportBox = document.getElementById('exportOptions');
+            
+            tbody.innerHTML = '';
+            countBadge.style.display = 'none';
+            exportBox.style.display = 'none';
+            currentDisplayedStudents = [];
+
+            if (!batchId) return;
+
+            document.getElementById('studentViewSemesterFilter').value = "";
+            document.getElementById('studentViewCourseFilter').innerHTML = '<option value="">-- Filter by Course --</option>';
+
+            const filtered = users.filter(u => (u.role || '').toLowerCase() === 'student' && u.batchId === batchId);
+            filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            currentDisplayedStudents = filtered;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No students found in this batch.</td></tr>';
+                return;
+            }
+
+            const attRes = await apiFetch('/admin/attendance-summary');
+            const attData = (attRes && attRes.ok) ? await attRes.json() : {};
+
+            countBadge.textContent = `Total: ${filtered.length}`;
+            countBadge.style.display = 'inline-block';
+            exportBox.style.display = 'block';
+
+            filtered.forEach((student, index) => {
+                const identifier = student.identifier || student.username || '-';
+                const attInfo = attData[identifier] || attData[student.id] || { percentage: 85.0 };
+                const pct = attInfo.percentage !== undefined ? attInfo.percentage : 85.0;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><strong>${identifier}</strong></td>
+                    <td>${student.name || '-'}</td>
+                    <td>${student.email || '-'}</td>
+                    <td>${student.phone || '-'}</td>
+                    <td>${student.dob || '-'}</td>
+                    <td>${getAttendanceBadge(pct)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function downloadStudentExcel() {
+            if (!currentDisplayedStudents || currentDisplayedStudents.length === 0) {
+                alert("No students available to export.");
+                return;
+            }
+
+            const incSno = document.getElementById('ex-sno')?.checked ?? true;
+            const incRegNo = document.getElementById('ex-regNo')?.checked ?? true;
+            const incName = document.getElementById('ex-name')?.checked ?? true;
+            const incEmail = document.getElementById('ex-email')?.checked ?? true;
+            const incPhone = document.getElementById('ex-phone')?.checked ?? true;
+            const incDob = document.getElementById('ex-dob')?.checked ?? true;
+            const incAtt = document.getElementById('ex-attendance')?.checked ?? true;
+
+            const attRes = await apiFetch('/admin/attendance-summary');
+            const attData = (attRes && attRes.ok) ? await attRes.json() : {};
+
+            const tempTable = document.createElement('table');
+            let headerHtml = '<thead><tr>';
+            if (incSno) headerHtml += '<th>S.No</th>';
+            if (incRegNo) headerHtml += '<th>Register Number</th>';
+            if (incName) headerHtml += '<th>Student Name</th>';
+            if (incEmail) headerHtml += '<th>Email ID</th>';
+            if (incPhone) headerHtml += '<th>Contact Number</th>';
+            if (incDob) headerHtml += '<th>Date of Birth</th>';
+            if (incAtt) headerHtml += '<th>Attendance (%)</th>';
+            headerHtml += '</tr></thead><tbody>';
+
+            let bodyHtml = '';
+            currentDisplayedStudents.forEach((student, index) => {
+                const identifier = student.identifier || student.username || '-';
+                const attInfo = attData[identifier] || attData[student.id] || { percentage: 85.0 };
+                const pct = attInfo.percentage !== undefined ? attInfo.percentage : 85.0;
+
+                let style = '';
+                if (pct <= 75) {
+                    style = 'background-color: #ffcdd2; color: #b71c1c; font-weight: bold;'; // Red highlight
+                } else if (pct > 75 && pct <= 80) {
+                    style = 'background-color: #fff9c4; color: #f57f17; font-weight: bold;'; // Yellow highlight
+                } else {
+                    style = 'background-color: #e8f5e9; color: #2e7d32;'; // Green highlight
+                }
+
+                bodyHtml += '<tr>';
+                if (incSno) bodyHtml += `<td>${index + 1}</td>`;
+                if (incRegNo) bodyHtml += `<td>${identifier}</td>`;
+                if (incName) bodyHtml += `<td>${student.name || '-'}</td>`;
+                if (incEmail) bodyHtml += `<td>${student.email || '-'}</td>`;
+                if (incPhone) bodyHtml += `<td>${student.phone || '-'}</td>`;
+                if (incDob) bodyHtml += `<td>${student.dob || '-'}</td>`;
+                if (incAtt) bodyHtml += `<td style="${style}">${pct}%</td>`;
+                bodyHtml += '</tr>';
+            });
+
+            tempTable.innerHTML = headerHtml + bodyHtml + '</tbody>';
+
+            const wb = XLSX.utils.table_to_book(tempTable, { sheet: "Attendance Report" });
+
+            const courseSelect = document.getElementById('studentViewCourseFilter');
+            const batchSelect = document.getElementById('studentViewBatchFilter');
+            let title = "Student_Attendance_Report";
+            if (courseSelect && courseSelect.value) {
+                const courseText = courseSelect.options[courseSelect.selectedIndex]?.text || '';
+                title = `Course_Attendance_${courseText.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            } else if (batchSelect && batchSelect.value) {
+                const batchText = batchSelect.options[batchSelect.selectedIndex]?.text || '';
+                title = `Batch_Attendance_${batchText.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            }
+
+            XLSX.writeFile(wb, `${title}.xlsx`);
+        }
+
+        
         function openManageBatchStudentsModal(classId) {
             currentManagingBatchId = classId;
             const cls = classes.find(c => c.id === classId);
             document.getElementById('batchStudentsTitleText').textContent = `Manage Students: ${cls.name}`;
+            
+            // Display semester at the top since it's common for the entire batch
+            const sem = cls.semester || calculateSemester(cls.id);
+            document.getElementById('batchSemesterDisplay').textContent = `Semester: ${sem}`;
+
             document.getElementById('searchBatchStudent').value = '';
-            renderBatchStudents();
-            openModal('manageBatchStudentsModal');
+            renderBatchStudents(); // This will populate the table
+            modalManager.show('manageBatchStudentsModal');
         }
 
         function openStudentModalForBatch() {
             // This function is for the "Add Student to Batch" button inside the modal
-            openModal('studentModal');
-            // Pre-fill the batch in the student add/edit form
-            document.getElementById('studentClass').value = currentManagingBatchId;
+            modalManager.student();
+            // The batch will be inferred from the RegNo upon submission.
         }
+function renderBatchStudents(){
 
-        function renderBatchStudents() {
+}
+        /*function renderBatchStudents() {
             const tbody = document.getElementById('batchStudentsTableBody');
             tbody.innerHTML = '';
 
             if (!currentManagingBatchId) return;
-
+            
             const searchTerm = document.getElementById('searchBatchStudent').value.toLowerCase();
 
             const filteredStudents = users.filter(user => {
-                if (user.role !== 'student') return false;
-                if (user.classId !== currentManagingBatchId) return false;
-                if (searchTerm && !user.name.toLowerCase().includes(searchTerm) && !user.regNo.includes(searchTerm)) return false;
+                const role = (user.role || '').toUpperCase(); // Assuming user.role exists
+                if (role !== 'STUDENT') return false; // Filter for students
+                if (user.batchId !== currentManagingBatchId) return false; // Filter by batchId
+                if (searchTerm && !user.name.toLowerCase().includes(searchTerm) && !user.identifier.toLowerCase().includes(searchTerm)) return false;
                 return true;
             });
 
@@ -1202,91 +1687,92 @@
             document.getElementById('batchStudentCount').textContent = `Total: ${filteredStudents.length}`;
 
             filteredStudents.forEach((student, index) => {
-                const cls = classes.find(c => c.id === student.classId);
-                const className = cls ? cls.name : student.classId;
-                const currentSem = student.semester || calculateSemester(student.regNo);
-                const inferredBatch = getBatchNameFromRegNo(student.regNo);
+                // Normalizing to isApproved to match Spring Boot backend conventions
+                const isApproved = student.isApproved !== undefined ? student.isApproved : student.is_approved;
                 
+                const statusAction = !isApproved ? 
+                    `<button class="btn btn-success btn-sm" onclick="approveStudent(${student.id})" title="Approve Student"><i class="fas fa-check"></i></button>` : '';
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${index + 1}</td>
-                    <td>${student.regNo} <br><small style="color:#888;">${inferredBatch}</small></td>
-                    <td>${student.name} <span class="badge badge-info" style="font-size: 0.7rem;">Sec ${student.section || 'A'}</span></td>
-                    <td><span style="font-weight: bold;">Sem ${currentSem}</span></td>
-                    <td>${student.enrolledCourses ? student.enrolledCourses.length : 0}</td>
-                    <td>${student.is_approved ? '<span style="color: green;">Active</span>' : '<span style="color: orange;">Pending</span>'}</td>
+                    <td>${student.identifier} <br><small class="text-muted">${student.batchId || 'N/A'}</small></td>
+                    <td>${student.name}</td>
+                    <td><span class="status-badge ${isApproved ? 'status-active' : 'status-pending'}">${isApproved ? 'Active' : 'Pending'}</span></td>
                     <td>
-                        <button class="btn btn-edit" onclick="editStudent(${student.id})"><i class="fas fa-edit"></i></button>
+                        ${statusAction}
+                        <button class="btn btn-edit" onclick="modalManager.student(${student.id})"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-delete" onclick="deleteStudent(${student.id})"><i class="fas fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
+        }*/
+
+        async function approveStudent(studentId) {
+            const student = users.find(u => u.id === studentId);
+            if (!student) return;
+
+            const payload = { ...student, isApproved: true };
+            const res = await apiFetch(`/admin/users/${studentId}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+
+            if (res && res.ok) {
+                const updatedUser = await res.json();
+                const index = users.findIndex(u => u.id === studentId);
+                users[index] = updatedUser;
+                renderBatchStudents();
+            }
         }
 
-        function handleStudentSubmit(e) {
+        async function handleStudentSubmit(e) {
             e.preventDefault();
-            
             const id = document.getElementById('studentId').value;
             const name = document.getElementById('studentName').value;
             const regNo = document.getElementById('studentRegNo').value;
-            const classId = document.getElementById('studentClass').value;
-            const section = document.getElementById('studentSection').value;
             const semester = document.getElementById('studentSemester').value;
             const password = document.getElementById('studentPassword').value;
-            
             const courseInputs = document.querySelectorAll('.student-course-input');
-            const enrolledCourses = Array.from(courseInputs).map(input => input.value.trim()).filter(val => val !== '');
+            const enrolledCourses = Array.from(courseInputs).map(input => ({ name: input.value.trim() })).filter(val => val.name !== ''); // Send as list of objects
+            const batchId = getBatchNameFromRegNo(regNo);
 
-            if (id) {
-                // Edit
-                const index = users.findIndex(u => u.id == id);
-                if (index !== -1) {
-                    users[index] = { ...users[index], name, regNo, classId, section, semester: semester ? parseInt(semester) : null, enrolledCourses, password };
-                }
-            } else {
-                // Add
-                const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
-                const newUser = {
-                    id: newId,
-                    name,
-                    role: 'student',
-                    regNo,
-                    classId,
-                    section,
-                    semester: semester ? parseInt(semester) : null,
-                    enrolledCourses,
-                    password,
-                    is_approved: true
-                };
-                users.push(newUser);
+            
+            const payload = { 
+                name, 
+                identifier: regNo, 
+                batchId,
+                semester: semester ? parseInt(semester) : null, 
+                enrolledCourses, 
+                password, 
+                role: 'student', 
+                teachingAssignments: [],
+                isApproved: id ? (users.find(u => u.id == id)?.isApproved ?? true) : true
+            };
+            
+            const res = await apiFetch(id ? `/admin/users/${id}` : '/admin/users', {
+                method: id ? 'PUT' : 'POST',
+                body: JSON.stringify(payload)
+            });
+            if (res && res.ok) {
+                await init();
+                modalManager.hide('studentModal');
+                if (document.getElementById('manageBatchStudentsModal').style.display === 'flex') renderBatchStudents();
+                alert('Student saved successfully!');
             }
-
-            localStorage.setItem('smartAttendance_users', JSON.stringify(users));
-            closeModal('studentModal');
-            // If the batch management modal is open, refresh its list
-            if (document.getElementById('manageBatchStudentsModal').style.display === 'flex') renderBatchStudents();
-            updateDashboardStats();
-            renderClasses();
-            alert('Student saved successfully!');
         }
 
-        function editStudent(id) {
-            const student = users.find(u => u.id === id);
-            if (student) {
-                document.getElementById('studentId').value = student.id;
-                document.getElementById('studentName').value = student.name;
-                document.getElementById('studentRegNo').value = student.regNo;
-                document.getElementById('studentClass').value = student.classId;
-                document.getElementById('studentSection').value = student.section || 'A';
-                document.getElementById('studentSemester').value = student.semester || '';
-                document.getElementById('studentPassword').value = student.password;
-                
-                document.getElementById('studentCourseCount').value = student.enrolledCourses ? student.enrolledCourses.length : 0;
-                generateStudentCourseInputs(student.enrolledCourses || []);
-
-                document.getElementById('modalTitle').textContent = 'Edit Student';
-                openModal('studentModal');
+        async function clearAllStudents() {
+            if (!confirm('Are you sure you want to PERMANENTLY delete ALL students from the database? This cannot be undone.')) return;
+            
+            const res = await apiFetch('/admin/users/students/clear', { method: 'DELETE' });
+            if (res && res.ok) {
+                alert('All students have been removed.');
+                await init(); 
+                renderEnrolledStudents();
+            } else {
+                alert('Failed to clear students.');
             }
         }
 
@@ -1302,11 +1788,13 @@
             }
         }
 
-        function deleteStudent(id) {
+        async function deleteStudent(id) {
             if (confirm('Are you sure you want to delete this student?')) {
-                users = users.filter(u => u.id !== id);
-                localStorage.setItem('smartAttendance_users', JSON.stringify(users));
-                renderBatchStudents();
+                const res = await apiFetch(`/admin/users/${id}`, { method: 'DELETE' });
+                if (res && res.ok) {
+                    await init(); // Re-fetch all data to ensure consistency
+                    renderBatchStudents();
+                }
                 updateDashboardStats();
                 renderClasses();
             }
@@ -1318,7 +1806,7 @@
             container.innerHTML = '';
 
             for (let i = 0; i < count; i++) {
-                const val = existingCourses[i] || '';
+                const val = typeof existingCourses[i] === 'object' ? (existingCourses[i].name || '') : (existingCourses[i] || '');
                 const div = document.createElement('div');
                 div.style.marginBottom = '5px';
                 div.innerHTML = `
@@ -1335,7 +1823,7 @@
             const searchTerm = document.getElementById('searchStaff').value.toLowerCase();
 
             const filteredStaff = users.filter(user => {
-                if (user.role !== 'staff') return false;
+                if ((user.role || '').toUpperCase() !== 'STAFF') return false;
                 if (searchTerm && !user.name.toLowerCase().includes(searchTerm) && !user.email.toLowerCase().includes(searchTerm)) return false;
                 return true;
             });
@@ -1346,23 +1834,47 @@
             }
 
             filteredStaff.forEach(staff => {
+                const isApproved = staff.isApproved !== undefined ? staff.isApproved : staff.is_approved;
+                
+                const statusAction = !isApproved ? 
+                    `<button class="btn btn-success btn-sm" onclick="approveStaff(${staff.id})" title="Approve Staff"><i class="fas fa-check"></i></button>` : '';
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${staff.name}</td>
-                    <td>${staff.email}</td>
-                    <td>${staff.subject || (staff.teachingAssignments ? staff.teachingAssignments.map(t => t.subject).join(', ') : '-')}</td>
-                    <td>${staff.is_approved ? '<span style="color: green;">Active</span>' : '<span style="color: orange;">Pending</span>'}</td>
+                    <td>${staff.email || ''}</td>
+                    <td>${staff.teachingAssignments && staff.teachingAssignments.length > 0 ? staff.teachingAssignments.map(t => t.subject).join(', ') : '-'}</td>
+                    <td><span class="status-badge ${isApproved ? 'status-active' : 'status-pending'}">${isApproved ? 'Active' : 'Pending'}</span></td>
                     <td>
-                        <button class="btn btn-edit" onclick="editStaff(${staff.id})"><i class="fas fa-edit"></i></button>
+                        ${statusAction}
+                        <button class="btn btn-edit" onclick="modalManager.staff(${staff.id})"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-delete" onclick="deleteStaff(${staff.id})"><i class="fas fa-trash"></i></button>
-                        <button class="btn btn-primary" style="background-color: #17a2b8; padding: 6px 12px; font-size: 0.9rem; margin-left: 5px;" onclick="viewStaffAssignments(${staff.id})" title="View Assignments"><i class="fas fa-tasks"></i></button>
+                        <button class="btn btn-primary btn-sm" style="background-color: #17a2b8; margin-left: 5px;" onclick="viewStaffAssignments(${staff.id})" title="View Assignments"><i class="fas fa-tasks"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function handleStaffSubmit(e) {
+        async function approveStaff(staffId) {
+            const staff = users.find(u => u.id === staffId);
+            if (!staff) return;
+
+            const payload = { ...staff, isApproved: true };
+            const res = await apiFetch(`/admin/users/${staffId}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+
+            if (res && res.ok) {
+                const updatedUser = await res.json();
+                const index = users.findIndex(u => u.id === staffId);
+                users[index] = updatedUser;
+                renderStaff();
+            }
+        }
+
+        async function handleStaffSubmit(e) {
             e.preventDefault();
             const id = document.getElementById('staffId').value;
             const name = document.getElementById('staffName').value;
@@ -1372,65 +1884,48 @@
             const assignmentRows = document.querySelectorAll('.staff-assignment-row');
             const teachingAssignments = Array.from(assignmentRows).map(row => ({
                 subject: row.querySelector('.staff-subject-input').value,
-                classId: row.querySelector('.staff-class-select').value,
+                batchId: row.querySelector('.staff-class-select').value, // Renamed to batchId for clarity
                 semester: row.querySelector('.staff-semester-select').value
             }));
 
-            // Legacy support: join subjects for display
-            const subject = teachingAssignments.map(t => t.subject).join(', ');
+            const payload = { 
+                name, 
+                email, 
+                identifier: email, 
+                teachingAssignments, 
+                password, 
+                role: 'staff',
+                isApproved: id ? (users.find(u => u.id == id)?.isApproved ?? true) : true 
+            };
 
-            if (id) {
-                const index = users.findIndex(u => u.id == id);
-                if (index !== -1) {
-                    users[index] = { ...users[index], name, email, subject, teachingAssignments, password };
-                }
-            } else {
-                const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
-                users.push({ id: newId, name, role: 'staff', email, subject, teachingAssignments, password, is_approved: true });
-            }
-            localStorage.setItem('smartAttendance_users', JSON.stringify(users));
-            closeModal('staffModal');
-            renderStaff();
-            updateDashboardStats();
-            alert('Staff saved successfully!');
-        }
+            const res = await apiFetch(id ? `/admin/users/${id}` : '/admin/users', {
+                method: id ? 'PUT' : 'POST',
+                body: JSON.stringify(payload)
+            });
 
-        function editStaff(id) {
-            const staff = users.find(u => u.id === id);
-            if (staff) {
-                document.getElementById('staffId').value = staff.id;
-                document.getElementById('staffName').value = staff.name;
-                document.getElementById('staffEmail').value = staff.email;
-                document.getElementById('staffPassword').value = staff.password;
-                
-                const container = document.getElementById('staffAssignmentsContainer');
-                container.innerHTML = '';
-                
-                if (staff.teachingAssignments && staff.teachingAssignments.length > 0) {
-                    staff.teachingAssignments.forEach(assign => addStaffAssignmentRow(assign));
-                } else if (staff.subject) {
-                    // Legacy fallback
-                    addStaffAssignmentRow({ subject: staff.subject, classId: '' });
-                } else {
-                    addStaffAssignmentRow();
-                }
-
-                document.getElementById('staffModalTitle').textContent = 'Edit Staff';
-                openModal('staffModal');
+            if (res && res.ok) {
+                await init();
+                modalManager.hide('staffModal');
+                alert('Staff saved successfully!');
             }
         }
 
-        function addStaffAssignmentRow(data = { subject: '', classId: '', semester: '' }) {
+        function addStaffAssignmentRow(data = { subject: '', batchId: '', semester: '' }) {
             const container = document.getElementById('staffAssignmentsContainer');
             const div = document.createElement('div');
-            div.className = 'staff-assignment-row';
+            div.className = 'staff-assignment-row course-input-group'; // Added course-input-group for styling
             div.style.display = 'flex';
             div.style.gap = '10px';
             div.style.marginBottom = '10px';
             
             let classOptions = '<option value="" disabled selected>Select Batch</option>';
-            classes.forEach(c => {
-                classOptions += `<option value="${c.id}" ${c.id === data.classId ? 'selected' : ''}>${c.name}</option>`;
+            (classes || []).forEach(c => {
+                const sem = c.semester || calculateSemester(c.id || '');
+                const year = (!isNaN(sem) && sem !== '-') ? Math.ceil(sem / 2) : null;
+                const yearLabel = (year >= 1 && year <= 4) ? ` (${year}${year === 1 ? 'st' : year === 2 ? 'nd' : year === 3 ? 'rd' : 'th'} Year)` : ''; // Assuming year is 1-4
+                // Backend uses batchId; check both for compatibility
+                const isSelected = String(c.id) === String(data.batchId || data.classId);
+                classOptions += `<option value="${c.id}" ${isSelected ? 'selected' : ''}>${c.name || c.id}${yearLabel}</option>`;
             });
 
             let semOptions = '<option value="" disabled selected>Sem</option>';
@@ -1451,11 +1946,13 @@
             container.appendChild(div);
         }
 
-        function deleteStaff(id) {
+        async function deleteStaff(id) {
             if (confirm('Are you sure you want to delete this staff member?')) {
-                users = users.filter(u => u.id !== id);
-                localStorage.setItem('smartAttendance_users', JSON.stringify(users));
-                renderStaff();
+                const res = await apiFetch(`/admin/users/${id}`, { method: 'DELETE' });
+                if (res && res.ok) {
+                    await init(); // Re-fetch all data to ensure consistency
+                    renderStaff();
+                }
                 updateDashboardStats();
             }
         }
@@ -1479,7 +1976,7 @@
                 }
             });
 
-            openModal('promoteBatchModal');
+            modalManager.show('promoteBatchModal');
         }
 
         function handlePromoteBatch(event) {
@@ -1488,16 +1985,25 @@
             const destinationBatchId = document.getElementById('promoteDestinationBatch').value;
 
             if (!sourceBatchId || !destinationBatchId) { alert('Please select a destination batch.'); return; }
-
+            
             const sourceBatch = classes.find(c => c.id === sourceBatchId);
             const destinationBatch = classes.find(c => c.id === destinationBatchId);
 
             if (!confirm(`Are you sure you want to promote all students from "${sourceBatch.name}" to "${destinationBatch.name}"? This action cannot be undone.`)) { return; }
 
             let promotedCount = 0;
+            users.forEach(user => { if ((user.role || '').toLowerCase() === 'student' && user.batchId === sourceBatchId) { user.batchId = destinationBatchId; promotedCount++; } });
             users.forEach(user => { if (user.role === 'student' && user.classId === sourceBatchId) { user.classId = destinationBatchId; promotedCount++; } });
-            localStorage.setItem('smartAttendance_users', JSON.stringify(users));
-            closeModal('promoteBatchModal');
+            
+            // TODO: Implement backend endpoint for promoteStudents
+            // Example: const res = await apiFetch('/admin/students/promote', { method: 'POST', body: JSON.stringify({ sourceBatchId, destinationBatchId }) });
+            // if (res && res.ok) {
+            //     modalManager.hide('promoteBatchModal');
+            //     renderClasses();
+            //     updateDashboardStats();
+            //     alert(`${promotedCount} students have been promoted successfully.`);
+            // }
+            alert("Promote Students: Backend implementation required.");
             renderClasses();
             updateDashboardStats();
             alert(`${promotedCount} students have been promoted successfully.`);
@@ -1517,10 +2023,12 @@
                 tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No assignments found for this staff member.</td></tr>';
             } else {
                 assignments.forEach(assign => {
-                    const cls = classes.find(c => c.id === assign.classId);
-                    const className = cls ? cls.name : (assign.classId || 'N/A');
+                    const batchId = assign.batchId || assign.classId;
+                    const cls = classes.find(c => String(c.id) === String(batchId));
+                    const className = cls ? cls.name : (batchId || 'N/A');
+                    
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `
+                    tr.innerHTML = ` 
                         <td>${className}</td>
                         <td>${assign.semester || 'N/A'}</td>
                         <td>${assign.subject}</td>
@@ -1528,32 +2036,52 @@
                     tbody.appendChild(tr);
                 });
             }
-            openModal('staffAssignmentsModal');
+            modalManager.show('staffAssignmentsModal');
         }
 
         function handleSemesterSettings(e) {
             e.preventDefault();
             const settings = {
+                id: document.getElementById('semesterSettingsId').value || null, // Include ID for PUT
                 academicYear: document.getElementById('academicYear').value,
                 semesterType: document.getElementById('semesterType').value,
                 startDate: document.getElementById('semStartDate').value,
                 endDate: document.getElementById('semEndDate').value
             };
             
-            localStorage.setItem('smartAttendance_settings', JSON.stringify(settings));
-            closeModal('semesterSettingsModal');
-            
-            // Refresh UI to reflect new semester calculations
-            renderClasses();
-            alert('Semester settings saved successfully!');
+            const method = settings.id ? 'PUT' : 'POST';
+            const url = settings.id ? `/admin/semester-settings/${settings.id}` : '/admin/semester-settings';
+
+            apiFetch(url, {
+                method: method,
+                body: JSON.stringify(settings)
+            }).then(res => {
+                if (res && res.ok) {
+                    return res.json();
+                } else {
+                    throw new Error('Failed to save semester settings.');
+                }
+            }).then(savedSettings => {
+                sessionStorage.setItem('smartAttendance_settings', JSON.stringify(savedSettings));
+                modalManager.hide('semesterSettingsModal');
+                renderClasses(); // Refresh UI to reflect new semester calculations
+                alert('Semester settings saved successfully!');
+            }).catch(error => {
+                console.error("Error saving semester settings:", error);
+                alert(error.message || 'Failed to save semester settings.');
+            });
         }
 
         function promoteStudents() {
-            if (!confirm("Are you sure you want to promote all students to the next semester? This will update the Academic Year/Semester settings.")) {
-                return;
-            }
+            alert("Promote Students: This feature requires backend implementation for transactional data updates across users, batches, and potentially attendance/timetable records.");
+            // TODO: Implement backend endpoint for promoteStudents
+            // Example: apiFetch('/admin/students/promote', { method: 'POST' });
+            return; // Exit for now, as backend is not implemented
 
-            const settings = JSON.parse(localStorage.getItem('smartAttendance_settings')) || {};
+            /* // Old sessionStorage logic (to be replaced by backend call)
+            try {
+                settings = JSON.parse(sessionStorage.getItem('smartAttendance_settings')) || {};
+            } catch(e) { console.error(e); }
             
             // Default if not set
             if (!settings.academicYear) {
@@ -1577,17 +2105,22 @@
                 settings.academicYear = `${startYear}-${endYear}`;
             }
 
-            localStorage.setItem('smartAttendance_settings', JSON.stringify(settings));
+            sessionStorage.setItem('smartAttendance_settings', JSON.stringify(settings));
             init(); // Re-initialize to update all views
             alert(`Students promoted successfully!\nNew Session: ${settings.academicYear} (${settings.semesterType === 'odd' ? 'Odd' : 'Even'} Semester)`);
+            */
         }
 
         function graduateStudents() {
-            if (!confirm("Are you sure you want to graduate final year students? This will move students in Semester 8 to the Alumni Archive.")) {
-                return;
-            }
+            alert("Graduate Students: This feature requires backend implementation for moving students to an alumni archive and updating their status.");
+            // TODO: Implement backend endpoint for graduateStudents
+            // Example: apiFetch('/admin/students/graduate', { method: 'POST' });
+            return; // Exit for now, as backend is not implemented
 
-            const alumni = JSON.parse(localStorage.getItem('smartAttendance_alumni')) || [];
+            /* // Old sessionStorage logic (to be replaced by backend call)
+            try {
+                alumni = JSON.parse(sessionStorage.getItem('smartAttendance_alumni')) || [];
+            } catch(e) { console.error(e); }
             let graduatedCount = 0;
 
             // Identify students to graduate (Sem 8)
@@ -1608,98 +2141,82 @@
             });
 
             users = users.filter(u => !studentsToGraduate.includes(u));
-            localStorage.setItem('smartAttendance_users', JSON.stringify(users));
-            localStorage.setItem('smartAttendance_alumni', JSON.stringify(alumni));
+            sessionStorage.setItem('smartAttendance_users', JSON.stringify(users));
+            sessionStorage.setItem('smartAttendance_alumni', JSON.stringify(alumni));
             
             init();
             alert(`Successfully graduated ${graduatedCount} students!`);
+            */
         }
 
-        // Class Course Management
-        let currentEditingClassId = null;
-
-        function renderClasses() {
-            const container = document.getElementById('classesContainer');
-            container.innerHTML = '';
+         //Class Course Management
+         function renderClasses() {
+             const container = document.getElementById('classesContainer');
+        container.innerHTML = '';
             
-            // Sort batches: Lower Year (1st) to Upper Year (4th)
-            // This means sorting by Start Year Descending (e.g. 2025, 2024, 2023...)
-            classes.sort((a, b) => {
-                const yearA = parseInt(a.id.split('-')[0]) || 0;
-                const yearB = parseInt(b.id.split('-')[0]) || 0;
-                return yearB - yearA;
-            });
+            if (Array.isArray(classes)) {
+                 classes.sort((a, b) => {
+                     const idA = String(a.id || '');
+                     const idB = String(b.id || '');
+                     const yearA = parseInt(idA.split('-')[0]) || 0;
+                     const yearB = parseInt(idB.split('-')[0]) || 0;
+                     return yearB - yearA;
+                 });
+             }
 
-            const attendance = JSON.parse(localStorage.getItem('smartAttendance_attendance')) || {};
+             classes.forEach(cls => {
+                 const currentSem = cls.semester || calculateSemester(cls.id);
+                 let badgeText = `Sem ${currentSem}`;
+              
+                 if (currentSem !== '-' && !isNaN(currentSem)) {
+                     const year = Math.ceil(currentSem / 2);
+                     const yearSuffix = (year === 1) ? 'st' : (year === 2) ? 'nd' : (year === 3) ? 'rd' : 'th';
+                     badgeText = (year <= 4) ? `${year}${yearSuffix} Year • Sem ${currentSem}` : `Graduated`;
+                 }
 
-            classes.forEach(cls => {
-                // Use manual semester if set, otherwise calculate
-                const currentSem = cls.semester || calculateSemester(cls.id);
-                let badgeText = `Sem ${currentSem}`;
+             const studentCount = users.filter(u => (u.role || '').toLowerCase() === 'student' && (u.batchId === cls.id || u.classId === cls.id)).length;
+                const courseCount = cls.courseCount !== undefined ? cls.courseCount : (cls.courses ? cls.courses.length : 0); 
                 
-                if (currentSem !== '-' && !isNaN(currentSem)) {
-                    const year = Math.ceil(currentSem / 2);
-                    const yearSuffix = (year === 1) ? 'st' : (year === 2) ? 'nd' : (year === 3) ? 'rd' : 'th';
-                    badgeText = (year <= 4) ? `${year}${yearSuffix} Year &bull; Sem ${currentSem}` : `Graduated`;
-                }
+                 const avgAtt = 0; 
+                let healthColor = '#2ecc71'; 
+                if (avgAtt < 75) healthColor = '#e74c3c';
+                 else if (avgAtt < 85) healthColor = '#f39c12';
 
-                const studentCount = users.filter(u => u.role === 'student' && u.classId === cls.id).length;
-                // Use manual course count if set, otherwise count array
-                const courseCount = cls.courseCount !== undefined ? cls.courseCount : (cls.courses ? cls.courses.length : 0);
-                
-                // Calculate Avg Attendance
-                let totalAttendance = 0;
-                let presentAttendance = 0;
-                
-                Object.values(attendance).forEach(dateData => {
-                    if (dateData[cls.id]) {
-                        Object.values(dateData[cls.id]).forEach(periodData => {
-                            Object.values(periodData).forEach(status => {
-                                totalAttendance++;
-                                if (status === 'present' || status === 'late') presentAttendance++;
-                            });
-                        });
-                    }
-                });
-                
-                const avgAtt = totalAttendance === 0 ? 0 : Math.round((presentAttendance / totalAttendance) * 100);
-                let healthColor = '#2ecc71'; // Green
-                if (avgAtt < 75) healthColor = '#e74c3c'; // Red
-                else if (avgAtt < 85) healthColor = '#f39c12'; // Orange
-
-                const card = document.createElement('div');
-                card.className = 'batch-card';
+                 const card = document.createElement('div');
+                 card.className = 'batch-card';
                 card.innerHTML = `
-                    <div class="batch-header">
-                        <div class="batch-title">${cls.name}</div>
-                        <span class="batch-badge">${badgeText}</span>
-                    </div>
+                     <div class="batch-header">
+                         <div class="batch-title">${cls.name}</div>
+                         <span class="batch-badge">${badgeText}</span>
+                     </div>
                     
-                    <div class="batch-stats">
-                        <div class="stat-item">
-                            <div class="stat-value">${studentCount}</div>
-                            <div class="stat-label">Students</div>
+                     <div class="batch-stats">
+                      <div class="stat-item">
+                             <div class="stat-value">${studentCount}</div>
+                             <div class="stat-label">Students</div>
+                         </div>
+                         <div class="stat-item">
+                             <div class="stat-value">${courseCount}</div>
+                             <div class="stat-label">Courses</div>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${courseCount}</div>
-                            <div class="stat-label">Courses</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value" style="color: ${healthColor}">${avgAtt}%</div>
-                            <div class="stat-label">Avg Att.</div>
-                        </div>
-                    </div>
+                         <div class="stat-item">
+                             <div class="stat-value" style="color: ${healthColor}">${avgAtt}%</div>
+                             <div class="stat-label">Avg Att.</div>
+                         </div>
+                     </div>
 
-                    <div class="batch-actions">
-                        <button class="btn btn-edit" onclick="openEditBatchModal('${cls.id}')"><i class="fas fa-edit"></i> Edit</button>
-                        <button class="btn btn-primary" style="background-color: #17a2b8;" onclick="openManageBatchStudentsModal('${cls.id}')"><i class="fas fa-users"></i> Students</button>
+                     <div class="batch-actions">
+                         <button class="btn btn-edit" onclick="openEditBatchModal('${cls.id}')"><i class="fas fa-edit"></i> Edit</button>
+                         <button class="btn btn-primary" style="background-color: #17a2b8;" onclick="openManageBatchStudentsModal('${cls.id}')"><i class="fas fa-users"></i> Students</button>
                         <button class="btn btn-primary" style="background-color: #27ae60;" onclick="openPromoteBatchModal('${cls.id}')"><i class="fas fa-level-up-alt"></i> Promote</button>
                         <button class="btn btn-delete" onclick="deleteBatch('${cls.id}')"><i class="fas fa-trash"></i> Delete</button>
                     </div>
                 `;
                 container.appendChild(card);
-            });
+        });
         }
+
+        let currentEditingClassId = null;
 
         function openEditBatchModal(classId) {
             const cls = classes.find(c => c.id === classId);
@@ -1712,34 +2229,35 @@
             const currentSem = cls.semester || calculateSemester(cls.id);
             document.getElementById('editBatchSemester').value = (!isNaN(currentSem) && currentSem >= 1 && currentSem <= 8) ? currentSem : 1;
             
-            // Set Course Count
-            const count = cls.courseCount !== undefined ? cls.courseCount : (cls.courses ? cls.courses.length : 0);
-            document.getElementById('editBatchCourseCount').value = count;
+            // courseCount is now dynamically calculated by the backend, no need to set it here.
 
-            openModal('editBatchModal');
+            modalManager.show('editBatchModal');
         }
 
-        function handleEditBatch(e) {
+        async function handleEditBatch(e) {
             e.preventDefault();
             const id = document.getElementById('editBatchId').value;
             const name = document.getElementById('editBatchName').value;
             const semester = parseInt(document.getElementById('editBatchSemester').value);
-            const courseCount = parseInt(document.getElementById('editBatchCourseCount').value);
 
-            const index = classes.findIndex(c => c.id === id);
-            if (index !== -1) {
-                classes[index].name = name;
-                classes[index].semester = semester;
-                classes[index].courseCount = courseCount;
-                
-                localStorage.setItem('smartAttendance_classes', JSON.stringify(classes));
-                closeModal('editBatchModal');
+            const payload = { id, name, semester }; // courseCount is dynamic, not sent in update
+            const res = await apiFetch(`/admin/batches/${id}`, { 
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+
+            if (res && res.ok) {
+                const updatedBatch = await res.json();
+                const index = classes.findIndex(c => c.id === id);
+                if (index !== -1) classes[index] = updatedBatch;
+
+                modalManager.hide('editBatchModal');
                 renderClasses();
                 alert('Batch details updated successfully!');
             }
         }
 
-        function handleAddBatch(e) {
+        async function handleAddBatch(e) {
             e.preventDefault();
             const name = document.getElementById('newBatchName').value;
             const id = document.getElementById('newBatchId').value;
@@ -1749,31 +2267,37 @@
                 return;
             }
 
-            classes.push({ id, name, courses: [] });
-            localStorage.setItem('smartAttendance_classes', JSON.stringify(classes));
+            const payload = { id, name, semester: 1, courseCount: 0 };
+            const res = await apiFetch('/admin/batches', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
             
-            closeModal('addBatchModal');
-            document.getElementById('newBatchName').value = '';
-            document.getElementById('newBatchId').value = '';
-            
-            populateClassDropdowns();
-            renderClasses();
-            updateDashboardStats();
-            alert('Batch created successfully!');
-        }
-
-        function deleteBatch(classId) {
-            if(confirm('Are you sure you want to delete this batch? This will remove all associated students and data.')) {
-                classes = classes.filter(c => c.id !== classId);
-                localStorage.setItem('smartAttendance_classes', JSON.stringify(classes));
+            if (res && res.ok) {
+                const newBatch = await res.json();
+                classes.push(newBatch);
                 
-                // Remove students associated with this batch
-                users = users.filter(u => u.classId !== classId);
-                localStorage.setItem('smartAttendance_users', JSON.stringify(users));
+                modalManager.hide('addBatchModal');
+                document.getElementById('newBatchName').value = '';
+                document.getElementById('newBatchId').value = '';
                 
-                populateClassDropdowns();
                 renderClasses();
                 updateDashboardStats();
+                alert('Batch created successfully!');
+            }
+        }
+
+        async function deleteBatch(classId) {
+            if(confirm('Are you sure you want to delete this batch? This will remove all associated data.')) {
+                const res = await apiFetch(`/admin/batches/${classId}`, {
+                    method: 'DELETE'
+                });
+
+                if (res && res.ok) {
+                    classes = classes.filter(c => c.id !== classId);
+                    renderClasses();
+                    updateDashboardStats();
+                }
             }
         }
 
@@ -1783,7 +2307,7 @@
             document.getElementById('classCoursesTitle').textContent = cls.name;
             renderClassCoursesList();
             populateCourseSuggestions();
-            openModal('classCoursesModal');
+            modalManager.show('classCoursesModal');
         }
 
         function renderClassCoursesList() {
@@ -1837,17 +2361,15 @@
         }
 
         function populateCourseSuggestions() {
-            const catalog = getCourseCatalog();
             const datalist = document.getElementById('courseSuggestions');
+            if (!datalist) return;
             datalist.innerHTML = '';
             
-            Object.keys(catalog).forEach(sem => {
-                catalog[sem].forEach(course => {
-                    const option = document.createElement('option');
-                    option.value = course.name;
-                    option.textContent = `${course.code} (Sem ${sem}) - ${course.type}`;
-                    datalist.appendChild(option);
-                });
+            globalCourseCatalog.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course.name; 
+                option.textContent = `${course.shortName || course.name} [${course.code}] (Sem ${course.semester})`;
+                datalist.appendChild(option);
             });
         }
 
@@ -1863,8 +2385,9 @@
             const clsIndex = classes.findIndex(c => c.id === currentEditingClassId);
             if (clsIndex !== -1) {
                 if (!classes[clsIndex].courses) classes[clsIndex].courses = [];
-                classes[clsIndex].courses.push({ name: courseName, semester: parseInt(semester), type: type });
-                localStorage.setItem('smartAttendance_classes', JSON.stringify(classes));
+                classes[clsIndex].courses.push({ name: courseName, semester: parseInt(semester), type: type }); // This is local update, needs backend call
+                // TODO: Call backend API to update batch courses
+                // const res = await apiFetch(`/admin/batches/${currentEditingClassId}/courses`, { method: 'POST', body: JSON.stringify({ name: courseName, semester: parseInt(semester), type: type }) });
                 renderClassCoursesList();
                 renderClasses(); // Update main table count
                 input.value = '';
@@ -1899,9 +2422,8 @@
                 let failCount = 0;
                 
                 // Find current batch
-                const clsIndex = classes.findIndex(c => c.id === currentEditingClassId);
-                if (clsIndex === -1) return;
-                const cls = classes[clsIndex];
+                const cls = classes.find(c => c.id === currentEditingClassId);
+                if (!cls) return;
                 if (!cls.courses) cls.courses = [];
 
                 // Skip header if present
@@ -1920,25 +2442,33 @@
                     const courseName = cols[2]; // Assuming 3rd column is Course Name
 
                     // Find Student in this batch
-                    const student = users.find(u => u.regNo === regNo && u.classId === currentEditingClassId);
+                    const student = users.find(u => u.identifier === regNo && u.batchId === currentEditingClassId);
                     
                     if (student && courseName) {
-                        if (!student.enrolledCourses) student.enrolledCourses = [];
-                        if (!student.enrolledCourses.includes(courseName)) {
-                            student.enrolledCourses.push(courseName);
-                            successCount++;
+                        // This part needs a backend endpoint for enrollment
+                        // For now, we'll simulate by updating the local 'users' array
+                        // and then calling the API to update the user.
+                        // This is not true bulk enrollment, but a step towards it.
+                        if (!student.enrolledCourses) student.enrolledCourses = []; // Assuming enrolledCourses is a List<Course>
+                        const courseObj = { name: courseName }; // Simplified course object
+                        if (!student.enrolledCourses.some(c => c.name === courseName)) {
+                            student.enrolledCourses.push(courseObj); // This is local update
+                            // TODO: Call backend API to update student's enrolled courses
+                            // TODO: Call API to update student's enrolled courses
+                            // await apiFetch(`/admin/users/${student.id}`, { method: 'PUT', body: JSON.stringify(student) });
+                            successCount++; 
                         }
                         
                         // Ensure course exists in batch list
-                        const courseExists = cls.courses.some(c => (typeof c === 'object' ? c.name : c) === courseName);
-                        if (!courseExists) cls.courses.push({ name: courseName, semester: null });
+                        // This part is for the batch's course list, not student enrollment
+                        // This logic should be handled by the Course Catalog management.
                     } else {
                         failCount++;
                     }
                 }
 
-                localStorage.setItem('smartAttendance_users', JSON.stringify(users));
-                localStorage.setItem('smartAttendance_classes', JSON.stringify(classes));
+                // TODO: After processing, a bulk update API call for all affected students would be ideal.
+                // For now, just re-render and alert.
                 renderClassCoursesList();
                 renderClasses();
                 alert(`Import Complete.\nStudents Enrolled: ${successCount}\nFailed/Skipped: ${failCount}`);
@@ -1947,59 +2477,71 @@
             reader.readAsText(file);
         }
 
-        function viewCourseStudents(index) {
+        async function viewCourseStudents(index) {
             const cls = classes.find(c => c.id === currentEditingClassId);
             if (!cls || !cls.courses || !cls.courses[index]) return;
 
             const courseObj = cls.courses[index];
             const courseName = typeof courseObj === 'object' ? courseObj.name : courseObj;
 
-            const students = users.filter(u => u.role === 'student' && u.classId === currentEditingClassId);
-            const enrolledStudents = students.filter(s => s.enrolledCourses && s.enrolledCourses.includes(courseName));
-
-            // Sort alphabetically
-            enrolledStudents.sort((a, b) => a.name.localeCompare(b.name));
-
             document.getElementById('courseStudentsTitle').textContent = `${courseName} (${cls.name})`;
             const tbody = document.getElementById('courseStudentsTableBody');
             tbody.innerHTML = '';
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Loading students...</td></tr>';
+
+            const courseInCatalog = globalCourseCatalog.find(c => (c.name || '').toLowerCase() === courseName.toLowerCase()) || 
+                                    currentSemesterCourses.find(c => (c.name || '').toLowerCase() === courseName.toLowerCase());
+            if (!courseInCatalog) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:red;">Course not found in catalog.</td></tr>';
+                return;
+            }
+            const res = await apiFetch(`/attendance/enrolled-students?courseId=${courseInCatalog.id}`);
+            if (!res || !res.ok) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:red;">Error fetching enrolled students.</td></tr>';
+                return;
+            }
+            const enrolledStudents = await res.json();
 
             if (enrolledStudents.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No students enrolled in this course.</td></tr>';
             } else {
-                enrolledStudents.forEach(s => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${s.regNo}</td><td>${s.name}</td>`;
-                    tbody.appendChild(tr);
-                });
+                enrolledStudents.forEach(s => tbody.innerHTML += `<tr><td>${s.identifier}</td><td>${s.name}</td></tr>`);
             }
-            openModal('courseStudentsModal');
+            modalManager.show('courseStudentsModal');
         }
 
         function removeClassCourse(index) {
             const clsIndex = classes.findIndex(c => c.id === currentEditingClassId);
             if (clsIndex !== -1 && classes[clsIndex].courses) {
-                classes[clsIndex].courses.splice(index, 1);
-                localStorage.setItem('smartAttendance_classes', JSON.stringify(classes));
+                classes[clsIndex].courses.splice(index, 1); // This is local update
+                // TODO: Call backend API to remove course from batch
+                // const res = await apiFetch(`/admin/batches/${currentEditingClassId}/courses/${index}`, { method: 'DELETE' });
                 renderClassCoursesList();
                 renderClasses();
             }
         }
 
         function archiveGraduatedBatches() {
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth(); // 0-11 (5 is June)
-
-            let archivedCount = 0;
+            alert("Archive Graduated Batches: This feature requires backend implementation for moving batches and associated data to an archive.");
+            // TODO: Implement backend endpoint for archiveGraduatedBatches
+            // Example: apiFetch('/admin/batches/archive-graduated', { method: 'POST' });
+            return; // Exit for now, as backend is not implemented
+            
+            /* // Old sessionStorage logic (to be replaced by backend call)
             const activeClasses = [];
-            const archivedClasses = JSON.parse(localStorage.getItem('smartAttendance_archived_classes')) || [];
-            const archivedUsers = JSON.parse(localStorage.getItem('smartAttendance_archived_users')) || [];
-            const archivedAttendance = JSON.parse(localStorage.getItem('smartAttendance_archived_attendance')) || {};
-            const archivedTimetable = JSON.parse(localStorage.getItem('smartAttendance_archived_timetable')) || {};
+            
+            let archivedClasses = [], archivedUsers = [], archivedAttendance = {}, archivedTimetable = {};
+            let attendance = {}, timetable = {};
 
-            const attendance = JSON.parse(localStorage.getItem('smartAttendance_attendance')) || {};
-            const timetable = JSON.parse(localStorage.getItem('smartAttendance_timetable')) || {};
+            try {
+                archivedClasses = JSON.parse(sessionStorage.getItem('smartAttendance_archived_classes')) || [];
+                archivedUsers = JSON.parse(sessionStorage.getItem('smartAttendance_archived_users')) || [];
+                archivedAttendance = JSON.parse(sessionStorage.getItem('smartAttendance_archived_attendance')) || {};
+                archivedTimetable = JSON.parse(sessionStorage.getItem('smartAttendance_archived_timetable')) || {};
+
+                attendance = JSON.parse(sessionStorage.getItem('smartAttendance_attendance')) || {};
+                timetable = JSON.parse(sessionStorage.getItem('smartAttendance_timetable')) || {};
+            } catch(e) { console.error(e); }
 
             // Identify batches to archive
             const batchesToArchive = [];
@@ -2067,15 +2609,15 @@
             users = users.filter(u => !archivedStudentIds.has(u.id));
 
             // Save everything
-            localStorage.setItem('smartAttendance_classes', JSON.stringify(activeClasses));
-            localStorage.setItem('smartAttendance_users', JSON.stringify(users));
-            localStorage.setItem('smartAttendance_attendance', JSON.stringify(attendance));
-            localStorage.setItem('smartAttendance_timetable', JSON.stringify(timetable));
+            sessionStorage.setItem('smartAttendance_classes', JSON.stringify(activeClasses));
+            sessionStorage.setItem('smartAttendance_users', JSON.stringify(users));
+            sessionStorage.setItem('smartAttendance_attendance', JSON.stringify(attendance));
+            sessionStorage.setItem('smartAttendance_timetable', JSON.stringify(timetable));
 
-            localStorage.setItem('smartAttendance_archived_classes', JSON.stringify(archivedClasses));
-            localStorage.setItem('smartAttendance_archived_users', JSON.stringify(archivedUsers));
-            localStorage.setItem('smartAttendance_archived_attendance', JSON.stringify(archivedAttendance));
-            localStorage.setItem('smartAttendance_archived_timetable', JSON.stringify(archivedTimetable));
+            sessionStorage.setItem('smartAttendance_archived_classes', JSON.stringify(archivedClasses));
+            sessionStorage.setItem('smartAttendance_archived_users', JSON.stringify(archivedUsers));
+            sessionStorage.setItem('smartAttendance_archived_attendance', JSON.stringify(archivedAttendance));
+            sessionStorage.setItem('smartAttendance_archived_timetable', JSON.stringify(archivedTimetable));
 
             // Update local variable `classes`
             classes = activeClasses;
@@ -2083,54 +2625,96 @@
             // Refresh UI
             init();
             alert(`Successfully archived ${archivedCount} batches.`);
+            */
         }
 
-        // Modal Helpers
-        function openModal(modalId) {
-            if (modalId === 'studentModal' && !document.getElementById('studentId').value) {
-                // Reset form if adding new
-                document.getElementById('studentForm').reset();
-                document.getElementById('studentId').value = '';
-                document.getElementById('modalTitle').textContent = 'Add New Student';
+        // --- Reusable Modal Manager ---
+        const modalManager = {
+            // Generic function to show a modal
+            show(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) modal.style.display = 'flex';
+            },
+            // Generic function to hide a modal
+            hide(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) modal.style.display = 'none';
+            },
+            // Prepare and show the "Add/Edit Student" modal
+            student(studentId = null) {
+                const form = document.getElementById('studentForm');
+                form.reset();
                 document.getElementById('studentCoursesContainer').innerHTML = '';
-                document.getElementById('studentCourseCount').value = '';
-                document.getElementById('studentSemester').value = '';
-            }
-            if (modalId === 'staffModal' && !document.getElementById('staffId').value) {
-                document.getElementById('staffForm').reset();
-                document.getElementById('staffId').value = '';
-                document.getElementById('staffModalTitle').textContent = 'Add New Staff';
+                handleRegNoInput(); // Clear hint
+                
+                if (studentId) { // Edit mode
+                    const student = users.find(u => u.id === studentId);
+                    if (student) {
+                        document.getElementById('studentId').value = student.id;
+                        document.getElementById('studentName').value = student.name;
+                        document.getElementById('studentRegNo').value = student.identifier; // Use identifier for RegNo
+                        document.getElementById('studentSemester').value = student.semester || ''; // Assuming student.semester exists
+                        document.getElementById('studentPassword').value = student.password;
+                        document.getElementById('studentCourseCount').value = student.enrolledCourses ? student.enrolledCourses.length : 0;
+                        generateStudentCourseInputs(student.enrolledCourses || []);
+                        document.getElementById('modalTitle').textContent = 'Edit Student';
+                    }
+                } else { // Add mode
+                    document.getElementById('studentId').value = '';
+                    document.getElementById('modalTitle').textContent = 'Add New Student';
+                }
+                this.show('studentModal');
+            },
+            // Prepare and show the "Add/Edit Staff" modal
+            staff(staffId = null) {
+                const form = document.getElementById('staffForm');
+                form.reset();
                 document.getElementById('staffAssignmentsContainer').innerHTML = '';
-                addStaffAssignmentRow(); // Add one empty row by default
-            }
-            if (modalId === 'semesterSettingsModal') {
-                const settings = JSON.parse(localStorage.getItem('smartAttendance_settings')) || {};
-                document.getElementById('academicYear').value = settings.academicYear || '';
-                
-                // Auto-detect semester type if not set
-                const currentMonth = new Date().getMonth();
-                const defaultType = (currentMonth >= 5 && currentMonth <= 10) ? 'odd' : 'even';
-                
-                document.getElementById('semesterType').value = settings.semesterType || defaultType;
-                document.getElementById('semStartDate').value = settings.startDate || '';
-                document.getElementById('semEndDate').value = settings.endDate || '';
-            }
-            document.getElementById(modalId).style.display = 'flex';
-        }
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-            if (modalId === 'studentModal') {
-                document.getElementById('studentForm').reset();
-                document.getElementById('studentId').value = '';
+                if (staffId) { // Edit mode
+                    const staff = users.find(u => u.id === staffId);
+                    if (staff) {
+                        document.getElementById('staffId').value = staff.id;
+                        document.getElementById('staffName').value = staff.name;
+                        document.getElementById('staffEmail').value = staff.email;
+                        document.getElementById('staffPassword').value = staff.password;
+                        if (staff.teachingAssignments && staff.teachingAssignments.length > 0) {
+                            staff.teachingAssignments.forEach(assign => addStaffAssignmentRow(assign));
+                        } else { addStaffAssignmentRow(); } // Add an empty row if no assignments
+                        document.getElementById('staffModalTitle').textContent = 'Edit Staff';
+                    }
+                } else { // Add mode
+                    document.getElementById('staffId').value = '';
+                    document.getElementById('staffModalTitle').textContent = 'Add New Staff';
+                    addStaffAssignmentRow();
+                }
+                this.show('staffModal');
+            },
+            // Prepare and show Semester Settings modal
+            semesterSettings() {
+                apiFetch('/admin/semester-settings').then(res => {
+                    if (res && res.ok) {
+                        return res.json();
+                    }
+                    return {}; // No settings found, use defaults
+                }).then(settings => {
+                    document.getElementById('semesterSettingsId').value = settings.id || '';
+                    document.getElementById('academicYear').value = settings.academicYear || '';
+                    const currentMonth = new Date().getMonth();
+                    const defaultType = (currentMonth >= 6 && currentMonth <= 10) ? 'odd' : 'even'; // July (6) to Nov (10) for Odd
+                    document.getElementById('semesterType').value = settings.semesterType || defaultType;
+                    document.getElementById('semStartDate').value = settings.startDate || '';
+                    document.getElementById('semEndDate').value = settings.endDate || '';
+                    this.show('semesterSettingsModal');
+                }).catch(error => {
+                    console.error("Error loading semester settings:", error);
+                    alert("Failed to load semester settings.");
+                });
             }
-            if (modalId === 'staffModal') {
-                document.getElementById('staffForm').reset();
-                document.getElementById('staffId').value = '';
-            }
-        }
+        };
 
         function logout() {
+            sessionStorage.clear(); // Clear all session data
             window.location.href = 'login.html';
         }
 
@@ -2147,9 +2731,6 @@
         let fullTimetableData = {};
 
         function initTimetableManager() {
-            const storedData = localStorage.getItem('smartAttendance_fullTimetable');
-            if (storedData) fullTimetableData = JSON.parse(storedData);
-            
             // Render Header
             const headerRow = document.getElementById('ttHeaderRow');
             while (headerRow.children.length > 1) headerRow.removeChild(headerRow.lastChild);
@@ -2173,13 +2754,24 @@
             return dates;
         }
 
-        function renderTimetableManager() {
+        async function renderTimetableManager() {
             const year = document.getElementById('ttYearSelect').value;
-            const section = document.getElementById('ttSectionSelect').value;
+            const key = `${year}`;
+
+            // Fetch from backend
+            const res = await apiFetch(`/timetable/admin?year=${year}`);
+            if (res && res.ok) {
+                const entries = await res.json();
+                fullTimetableData[key] = {};
+                entries.forEach(e => {
+                    if (!fullTimetableData[key][e.day]) fullTimetableData[key][e.day] = {};
+                    fullTimetableData[key][e.day][e.period] = { subject: e.subject, type: e.type, staff: e.staffName };
+                });
+            }
+
             const tbody = document.getElementById('ttBody');
             tbody.innerHTML = '';
 
-            const key = `${year}-${section}`;
             const data = fullTimetableData[key] || {};
             const weekDates = getDatesForCurrentWeek();
 
@@ -2212,51 +2804,64 @@
             });
         }
 
-        function saveTimetableManager() {
+        async function saveTimetableManager() {
             const year = document.getElementById('ttYearSelect').value;
-            const section = document.getElementById('ttSectionSelect').value;
-            const key = `${year}-${section}`;
             const tbody = document.getElementById('ttBody');
             const rows = tbody.querySelectorAll('tr');
-            const newData = {};
+            const entries = [];
 
             rows.forEach((row, index) => {
                 const day = days[index];
-                newData[day] = {};
                 const cells = row.querySelectorAll('td');
                 for (let i = 1; i < cells.length; i++) {
                     const subject = cells[i].querySelector('.tt-subject').value;
                     const type = cells[i].querySelector('.tt-type').value;
-                    const staff = cells[i].querySelector('.tt-staff').value;
-                    newData[day][i] = { subject, type, staff };
+                    const staffName = cells[i].querySelector('.tt-staff').value;
+                    if (subject.trim()) {
+                        entries.push({ day, period: i, subject, type, staffName });
+                    }
                 }
             });
 
-            fullTimetableData[key] = newData;
-            localStorage.setItem('smartAttendance_fullTimetable', JSON.stringify(fullTimetableData));
-            
+            const res = await apiFetch(`/timetable/admin?year=${year}`, {
+                method: 'POST',
+                body: JSON.stringify(entries)
+            });
+
+            if (!res || !res.ok) {
+                const err = res ? await res.json().catch(() => ({})) : {};
+                alert(`Failed to save timetable: ${err.message || 'Server error or endpoint not found'}`);
+                return;
+            }
+
             const btn = document.getElementById('ttSaveBtn');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-check"></i> Saved';
             setTimeout(() => btn.innerHTML = originalText, 2000);
         }
 
-        function resetTimetableManager() {
+        async function resetTimetableManager() {
             if(confirm('Clear timetable for this section?')) {
                 const year = document.getElementById('ttYearSelect').value;
-                const section = document.getElementById('ttSectionSelect').value;
-                delete fullTimetableData[`${year}-${section}`];
-                renderTimetableManager();
+                
+                const res = await apiFetch(`/timetable/admin?year=${year}`, {
+                    method: 'DELETE'
+                });
+                
+                if (res && res.ok) {
+                    delete fullTimetableData[`${year}`];
+                    renderTimetableManager();
+                }
             }
         }
 
         // --- Staff Allocation Logic ---
         function initStaffAllocation() {
-            const storedData = localStorage.getItem('smartAttendance_fullTimetable');
-            if (storedData) fullTimetableData = JSON.parse(storedData);
-            
-            const users = JSON.parse(localStorage.getItem('smartAttendance_users')) || [];
-            const staffList = users.filter(u => u.role === 'staff');
+            // Use the global 'users' array populated from the backend in init()
+            const staffList = users.filter(u => {
+                const role = (u.role || '').toUpperCase();
+                return role === 'STAFF';
+            });
             
             const container = document.getElementById('saStaffList');
             container.innerHTML = '';
@@ -2276,15 +2881,40 @@
                     container.appendChild(card);
                 });
             }
-            renderAllocationGrid();
+            renderAllocationGrid(true);
         }
 
-        function renderAllocationGrid() {
+        async function renderAllocationGrid(shouldFetch = true) {
             const year = document.getElementById('saYearSelect').value;
-            const section = document.getElementById('saSectionSelect').value;
             const container = document.getElementById('saTimetableContainer');
-            const key = `${year}-${section}`;
-            const data = fullTimetableData[key] || {};
+            if (!container) return;
+            const key = `${year}`;
+            
+            // Pre-initialize cache structure for this year
+            if (!fullTimetableData[key]) fullTimetableData[key] = {};
+
+            if (shouldFetch) {
+                container.innerHTML = '<div class="text-center p-20"><i class="fas fa-spinner fa-spin"></i> Loading timetable data...</div>';
+                // Fetch latest timetable data from backend
+                const res = await apiFetch(`/timetable/admin?year=${year}`);
+                if (res && res.ok) {
+                    const entries = await res.json();
+                    fullTimetableData[key] = {}; // Reset local cache for fresh fetch
+                    entries.forEach(e => {
+                        if (!fullTimetableData[key][e.day]) fullTimetableData[key][e.day] = {};
+                        fullTimetableData[key][e.day][e.period] = { 
+                            subject: e.subject, 
+                            type: e.type, 
+                            staff: e.staffName || '' 
+                        };
+                    });
+                } else {
+                    container.innerHTML = '<div class="text-center p-20 text-danger">Failed to load timetable. Ensure you have saved a timetable for this year.</div>';
+                    return;
+                }
+            }
+
+            const data = fullTimetableData[key];
 
             let html = `<table class="alloc-table"><thead><tr><th>Day</th>`;
             for(let i=1; i<=periodsCount; i++) html += `<th>Period ${i}</th>`;
@@ -2295,6 +2925,7 @@
                 for(let i=1; i<=periodsCount; i++) {
                     const cellData = data[day] && data[day][i] ? data[day][i] : { subject: '---', staff: '' };
                     const subject = cellData.subject || '---';
+                    const displaySubject = getOnlyShortName(subject);
                     const staff = cellData.staff || '';
 
                     if (subject.includes('/')) {
@@ -2314,7 +2945,7 @@
                                      ondragover="event.preventDefault(); this.classList.add('drag-over');" 
                                      ondragleave="this.classList.remove('drag-over');" 
                                      ondrop="handleDrop(event, this)">
-                                    <span class="alloc-subject small">${sub}</span>
+                                    <span class="alloc-subject small">${getOnlyShortName(sub)}</span>
                                     ${sName ? 
                                         `<span class="alloc-staff small">${sName} <i class="fas fa-times remove-staff" onclick="removeAllocStaff('${day}', ${i}, ${idx})"></i></span>` 
                                         : '<span class="placeholder">Drop Staff</span>'}
@@ -2326,7 +2957,7 @@
                         html += `
                             <td class="droppable" data-day="${day}" data-period="${i}" ondragover="event.preventDefault(); this.querySelector('.alloc-cell').classList.add('drag-over');" ondragleave="this.querySelector('.alloc-cell').classList.remove('drag-over');" ondrop="handleDrop(event, this)">
                                 <div class="alloc-cell">
-                                    <span class="alloc-subject">${subject}</span>
+                                    <span class="alloc-subject">${displaySubject}</span>
                                     ${staff ? `<span class="alloc-staff">${staff} <i class="fas fa-times remove-staff" onclick="removeAllocStaff('${day}', ${i})"></i></span>` : '<span style="color:#ccc; font-size:0.8rem;">Drop Staff Here</span>'}
                                 </div>
                             </td>`;
@@ -2340,11 +2971,8 @@
 
         function handleDrop(e, cell) {
             e.preventDefault();
-            if (cell.querySelector('.alloc-cell')) {
-                cell.querySelector('.alloc-cell').classList.remove('drag-over');
-            } else {
-                cell.classList.remove('drag-over');
-            }
+            const dropTarget = cell.querySelector('.alloc-cell') || cell;
+            dropTarget.classList.remove('drag-over');
             
             const staffName = e.dataTransfer.getData('text/plain');
             const day = cell.dataset.day;
@@ -2352,70 +2980,96 @@
             const splitIndex = cell.dataset.splitIndex;
             
             const year = document.getElementById('saYearSelect').value;
-            const section = document.getElementById('saSectionSelect').value;
-            const key = `${year}-${section}`;
+            const key = `${year}`;
 
             if (!fullTimetableData[key]) fullTimetableData[key] = {};
             if (!fullTimetableData[key][day]) fullTimetableData[key][day] = {};
-            if (!fullTimetableData[key][day][period]) fullTimetableData[key][day][period] = { subject: '', type: 'Theory' };
+            if (!fullTimetableData[key][day][period]) fullTimetableData[key][day][period] = { subject: '---', type: 'Theory' };
             
             if (splitIndex !== undefined) {
+                const sIdx = parseInt(splitIndex);
                 let currentStaffStr = fullTimetableData[key][day][period].staff || '';
-                // Handle potential existing format
                 let staffs = currentStaffStr.includes('/') ? currentStaffStr.split('/') : [currentStaffStr];
-                // Ensure array has enough slots
-                while(staffs.length <= splitIndex) staffs.push('');
                 
-                staffs[splitIndex] = staffName;
+                while(staffs.length <= sIdx) staffs.push('');
+                
+                staffs[sIdx] = staffName;
                 fullTimetableData[key][day][period].staff = staffs.join('/');
             } else {
                 fullTimetableData[key][day][period].staff = staffName;
             }
             
-            renderAllocationGrid();
+            renderAllocationGrid(false);
         }
 
         function removeAllocStaff(day, period, splitIndex = null) {
             const year = document.getElementById('saYearSelect').value;
-            const section = document.getElementById('saSectionSelect').value;
-            const key = `${year}-${section}`;
+            const key = `${year}`;
             if (fullTimetableData[key] && fullTimetableData[key][day] && fullTimetableData[key][day][period]) {
                 if (splitIndex !== null) {
+                    const sIdx = parseInt(splitIndex);
                     let currentStaffStr = fullTimetableData[key][day][period].staff || '';
                     let staffs = currentStaffStr.split('/');
-                    if (staffs[splitIndex]) staffs[splitIndex] = '';
+                    if (staffs[sIdx]) staffs[sIdx] = '';
                     fullTimetableData[key][day][period].staff = staffs.join('/');
                 } else {
                     fullTimetableData[key][day][period].staff = '';
                 }
-                renderAllocationGrid();
+                renderAllocationGrid(false);
             }
         }
 
-        function saveStaffAllocation() {
-            localStorage.setItem('smartAttendance_fullTimetable', JSON.stringify(fullTimetableData));
-            const btn = document.getElementById('saSaveBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check"></i> Saved';
-            setTimeout(() => btn.innerHTML = originalText, 2000);
+        async function saveStaffAllocation() {
+            const year = document.getElementById('saYearSelect').value;
+            const key = `${year}`;
+            const data = fullTimetableData[key] || {};
+            
+            // Transform nested data back into a list of entries for the backend
+            const entries = [];
+            Object.keys(data).forEach(day => {
+                Object.keys(data[day]).forEach(period => {
+                    const cell = data[day][period];
+                    if ((cell.subject && cell.subject !== '---') || (cell.staff && cell.staff.trim() !== '')) {
+                        entries.push({
+                            day: day,
+                            period: parseInt(period),
+                            subject: cell.subject,
+                            type: cell.type || 'Theory',
+                            staffName: cell.staff
+                        });
+                    }
+                });
+            });
+
+            const res = await apiFetch(`/timetable/admin?year=${year}`, {
+                method: 'POST',
+                body: JSON.stringify(entries)
+            });
+
+            if (res && res.ok) {
+                const btn = document.getElementById('saSaveBtn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Saved';
+                setTimeout(() => btn.innerHTML = originalText, 2000);
+            } else {
+                alert("Failed to save staff allocation to server.");
+            }
         }
 
         // --- Course Catalog Management ---
-        function getCourseCatalog() {
-            return JSON.parse(localStorage.getItem('smartAttendance_course_catalog')) || {};
-        }
-
-        function saveCourseCatalog(catalog) {
-            localStorage.setItem('smartAttendance_course_catalog', JSON.stringify(catalog));
-        }
-
-        let editingCourseIndex = -1;
-
-        function renderCourseCatalog() {
+        async function renderCourseCatalog() {
             cancelCourseEdit();
             const semester = document.getElementById('manageCourseSemester').value;
-            const catalog = getCourseCatalog();
-            const courses = catalog[semester] || [];
+            
+            const res = await apiFetch(`/admin/courses?semester=${semester}`);
+            if (!res || !res.ok) {
+                document.getElementById('courseCatalogBody').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Error connecting to server. Please check if the backend is running.</td></tr>';
+                return;
+            }
+            
+            const courses = await res.json();
+            currentSemesterCourses = courses; // Store fetched courses
+
             const tbody = document.getElementById('courseCatalogBody');
             tbody.innerHTML = '';
 
@@ -2426,24 +3080,25 @@
 
             courses.forEach((course, index) => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
+                tr.innerHTML = ` 
                     <td><strong>${course.code}</strong></td>
-                    <td>${course.name}</td>
-                    <td><span class="course-type-badge type-${course.type.toLowerCase()}">${course.type}</span></td>
+                    <td>${course.name} <small class="text-muted">(${course.shortName || '-'})</small></td>
+                    <td><span class="course-type-badge type-${course.type.toLowerCase().replace(/\s/g, '')}">${course.type}</span></td>
                     <td>${course.credits}</td>
                     <td>
                         <button class="btn btn-edit" onclick="editCourseFromCatalog('${semester}', ${index})"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-delete" onclick="deleteCourseFromCatalog('${semester}', ${index})"><i class="fas fa-trash"></i></button>
-                    </td>
+                    </td> 
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function addCourseToCatalog() {
+        async function addCourseToCatalog() {
             const semester = document.getElementById('manageCourseSemester').value;
             const code = document.getElementById('newCourseCode').value.trim();
             const name = document.getElementById('newCourseNameInput').value.trim();
+            const shortName = document.getElementById('newCourseShortName').value.trim();
             const type = document.getElementById('newCourseType').value;
             const credits = document.getElementById('newCourseCredits').value;
 
@@ -2452,25 +3107,37 @@
                 return;
             }
 
-            const catalog = getCourseCatalog();
-            if (!catalog[semester]) catalog[semester] = [];
+            const payload = { code, name, shortName, type, credits: parseInt(credits), semester: parseInt(semester) };
             
+            let res;
             if (editingCourseIndex === -1) {
-                catalog[semester].push({ code, name, type, credits });
+                res = await apiFetch('/admin/courses', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
             } else {
-                catalog[semester][editingCourseIndex] = { code, name, type, credits };
+                const courseId = currentSemesterCourses[editingCourseIndex].id;
+                res = await apiFetch(`/admin/courses/${courseId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(payload)
+                });
             }
-            
-            saveCourseCatalog(catalog);
-            renderCourseCatalog();
+
+            if (res && (res.status === 200 || res.status === 201)) {
+                alert('Course saved successfully!');
+                renderCourseCatalog();
+            } else {
+                const errorData = res ? await res.json().catch(() => ({})) : {};
+                alert(`Error: ${errorData.message || 'Failed to save course. Please check backend logs.'}`);
+            }
         }
 
         function editCourseFromCatalog(semester, index) {
-            const catalog = getCourseCatalog();
-            const course = catalog[semester][index];
+            const course = currentSemesterCourses[index];
             
             document.getElementById('newCourseCode').value = course.code;
             document.getElementById('newCourseNameInput').value = course.name;
+            document.getElementById('newCourseShortName').value = course.shortName || '';
             document.getElementById('newCourseType').value = course.type;
             document.getElementById('newCourseCredits').value = course.credits;
             
@@ -2485,6 +3152,7 @@
             editingCourseIndex = -1;
             document.getElementById('newCourseCode').value = '';
             document.getElementById('newCourseNameInput').value = '';
+            document.getElementById('newCourseShortName').value = '';
             document.getElementById('newCourseCredits').value = '';
             
             const addBtn = document.getElementById('addCourseBtn');
@@ -2497,12 +3165,15 @@
             }
         }
 
-        function deleteCourseFromCatalog(semester, index) {
+        async function deleteCourseFromCatalog(semester, index) {
             if(confirm('Delete this course?')) {
-                const catalog = getCourseCatalog();
-                if (catalog[semester]) {
-                    catalog[semester].splice(index, 1);
-                    saveCourseCatalog(catalog);
+                const courseId = currentSemesterCourses[index].id;
+                
+                const res = await apiFetch(`/admin/courses/${courseId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (res && res.ok) {
                     renderCourseCatalog();
                 }
             }

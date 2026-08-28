@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account List | Smart Attendance</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .table-container { padding: 50px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: var(--primary-color); color: white; }
+        tr:hover { background-color: #f9f9f9; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: var(--primary-color); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="table-container">
+        <a href="/login" class="back-link">← Back to Login</a>
+        <h1>Registered User Accounts</h1>
+        <p>This table displays data fetched directly from the MySQL database.</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Password (Encrypted/Plain)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="account : ${accounts}">
+                    <td th:text="${account.id}">1</td>
+                    <td th:text="${account.username}">username</td>
+                    <td>
+                        <span th:text="${account.role}" 
+                              th:style="${account.role == 'admin' ? 'color: red; font-weight: bold;' : ''}">
+                            role
+                        </span>
+                    </td>
+                    <td th:text="${account.password}">******</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(accounts)}" class="empty-row">
+                    <td colspan="4">No accounts found in database.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
