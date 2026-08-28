@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings | Smart Attendance System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="config.js"></script>
     <link rel="stylesheet" href="staff_settings.css">
     <style>
         :root {
@@ -193,8 +194,7 @@
                 return;
             }
 
-            // Assuming an API_BASE is defined globally or passed
-            const API_BASE = "http://localhost:8081/api";
+            // API_BASE is loaded from config.js
             const token = sessionStorage.getItem('auth_token');
 
             fetch(`${API_BASE}/staff/profile/${currentUser.username}`, { // Assuming username is email for staff

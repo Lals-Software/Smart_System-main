@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="config.js"></script>
     <style>
         :root {
             --primary-color: #4a90e2;
@@ -556,7 +557,7 @@
             if (tabName === 'courses') loadCourses();
         }
 
-        const API_BASE = "http://localhost:8081/api";
+        // API_BASE is loaded from config.js
         let globalSettings = {}; // To store fetched settings
 
         async function apiFetch(endpoint, options = {}) {

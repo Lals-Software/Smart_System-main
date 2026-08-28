@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Registration | Smart Attendance System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="config.js"></script>
     <style>
         :root {
             --primary-color: #4a90e2;
@@ -200,7 +201,7 @@
         // Fetch classes on load
         document.addEventListener('DOMContentLoaded', async () => {
             try {
-                const res = await fetch('http://localhost:8081/api/admin/batches');
+                const res = await fetch(`${API_BASE}/admin/batches`);
                 const classes = res.ok ? await res.json() : [];
                 const options = classes.length ? classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('') : '<option value="">No batches found</option>';            
                 document.getElementById('classId').innerHTML = options;
@@ -255,7 +256,7 @@
                 payload.staffSemester = document.getElementById('staffSemester').value;
             }
 
-            fetch('http://localhost:8081/api/register', {
+            fetch(`${API_BASE}/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

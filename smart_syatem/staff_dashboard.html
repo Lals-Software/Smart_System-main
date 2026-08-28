@@ -6,6 +6,7 @@
     <title>Staff Dashboard | Smart Attendance System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="config.js"></script>
     <style>
         /* Specific Styles for Staff Dashboard */
         .profile-header-card {
@@ -284,7 +285,7 @@
     </div>
 
     <script>
-        const API_BASE = "http://localhost:8081/api";
+        // API_BASE is loaded from config.js
         let currentUser = {}; // Will be populated from sessionStorage
         let globalSettings = {}; // To store fetched settings
         let teachingAssignments = []; // Fetched from backend
