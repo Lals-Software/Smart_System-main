@@ -63,15 +63,18 @@ public class LoginApiController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticate(@RequestBody LoginForm loginForm) {
-        String submittedUsername = loginForm.getUsername();
-        String submittedRole = loginForm.getRole() != null ? loginForm.getRole().toLowerCase() : "";
-        String submittedPassword = loginForm.getPassword(); // For logging, do NOT log in production
+        String submittedUsername = loginForm.getUsername() != null ? loginForm.getUsername().trim() : "";
+        String submittedRole = loginForm.getRole() != null ? loginForm.getRole().trim().toLowerCase() : "";
+        String submittedPassword = loginForm.getPassword() != null ? loginForm.getPassword().trim() : "";
 
-        System.out.println("Login attempt: Username='" + submittedUsername + "', Role='" + submittedRole + "', Password='" + submittedPassword + "'");
+        System.out.println("Login attempt: Username='" + submittedUsername + "', Role='" + submittedRole + "'");
         
-        Optional<UserAccount> user = repository.findByRoleAndUsername(submittedRole, submittedUsername);
+        Optional<UserAccount> user = repository.findByRoleIgnoreCaseAndUsernameIgnoreCase(submittedRole, submittedUsername);
+        if (user.isEmpty()) {
+            user = repository.findByUsernameIgnoreCase(submittedUsername);
+        }
 
-        if (user.isPresent() && user.get().getPassword().equals(loginForm.getPassword())) {
+        if (user.isPresent() && user.get().getPassword().trim().equals(submittedPassword)) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("user", user.get());
@@ -79,10 +82,10 @@ public class LoginApiController {
             return ResponseEntity.ok(response);
         }
 
-        System.out.println("Login failed for user: " + submittedUsername + ". User present: " + user.isPresent() + ", Password match: " + (user.isPresent() ? user.get().getPassword().equals(submittedPassword) : "N/A"));
+        System.out.println("Login failed for user: " + submittedUsername);
         Map<String, Object> error = new HashMap<>();
         error.put("success", false);
-        error.put("message", "Invalid credentials or user not found.");
+        error.put("message", "Invalid username or password.");
         return ResponseEntity.status(401).body(error);
     }
 

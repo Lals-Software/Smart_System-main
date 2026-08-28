@@ -10,6 +10,8 @@ import com.smartsyatem.entity.UserAccount;
 
 public interface UserAccountRepository extends JpaRepository<UserAccount, Long> {
     Optional<UserAccount> findByRoleAndUsername(String role, String username);
+    Optional<UserAccount> findByUsernameIgnoreCase(String username);
+    Optional<UserAccount> findByRoleIgnoreCaseAndUsernameIgnoreCase(String role, String username);
     List<UserAccount> findByRole(String role);
     long countByRole(String role);
     @Transactional
