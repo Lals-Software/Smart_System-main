@@ -538,12 +538,12 @@
                         password: password
                     })
                 })
-                .then(response => {
-                    if (response.status === 403) {
-                        return response.json().then(data => { throw new Error(data.message); });
+                .then(async response => {
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Invalid username or password.');
                     }
-                    if (!response.ok) throw new Error('Unauthorized');
-                    return response.json();
+                    return data;
                 })
                 .then(data => {
                     if (data.success) {
