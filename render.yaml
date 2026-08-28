@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: smart-attendance-backend
+    env: docker
+    dockerfilePath: ./spring-login/Dockerfile
+    dockerContext: ./spring-login
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8081
