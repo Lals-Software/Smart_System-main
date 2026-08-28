@@ -1,6 +1,6 @@
 // Global API Base Configuration
-// Priority: 1) Localhost if testing locally 2) Saved custom URL 3) Default Railway URL
-const DEFAULT_RAILWAY_URL = "https://smart-attendance-backend-production-1406.up.railway.app/api";
+// Dynamically resolves to local Spring Boot when testing locally, or Railway backend when deployed on Vercel
+const DEFAULT_RAILWAY_URL = "https://smart-attendance-lals.up.railway.app/api";
 
 function resolveApiBase() {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
